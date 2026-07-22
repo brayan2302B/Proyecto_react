@@ -8,6 +8,13 @@ import Login from './pages/Login';
 import RecuperarContrasena from './pages/RecuperarContrasena';
 import Registro from './pages/Registro';
 import DashboardPlaceholder from './pages/DashboardPlaceholder';
+import CoordinadorLayout from './layouts/CoordinadorLayout';
+import Dashboard from './pages/coordinador/Dashboard';
+import RevisionInformes from './pages/coordinador/RevisionInformes';
+import Reportes from './pages/coordinador/Reportes';
+import GestionUsuarios from './pages/coordinador/GestionUsuarios';
+import Configuracion from './pages/coordinador/Configuracion';
+import AsistenteIA from './pages/coordinador/AsistenteIA';
 import InstructorLayout from './layouts/InstructorLayout';
 import Dashboard from './pages/instructor/Dashboard';
 import MisInformes from './pages/instructor/MisInformes';
@@ -54,15 +61,22 @@ function App() {
               <Route path="perfil" element={<Perfil />} />
             </Route>
 
-            {/* Protected Coordinador Route */}
+            {/* Protected Coordinador Route Layout */}
             <Route
               path="/coordinador"
               element={
                 <ProtectedRoute allowedRoles={['coordinador']}>
-                  <DashboardPlaceholder />
+                  <CoordinadorLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<Dashboard />} />
+              <Route path="revision" element={<RevisionInformes />} />
+              <Route path="reportes" element={<Reportes />} />
+              <Route path="usuarios" element={<GestionUsuarios />} />
+              <Route path="configuracion" element={<Configuracion />} />
+              <Route path="asistente" element={<AsistenteIA />} />
+            </Route>
 
             {/* Root & Fallback redirects */}
             <Route path="/" element={<RootRedirect />} />

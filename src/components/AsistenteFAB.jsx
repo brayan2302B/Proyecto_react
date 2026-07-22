@@ -1,0 +1,216 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { FiCpu, FiSend, FiHelpCircle, FiClock, FiX } from 'react-icons/fi';
+import { toast } from 'sonner';
+
+export default function AsistenteFAB() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      sender: 'assistant',
+      text: '¡Hola! Soy tu asistente de coordinación. ¿Deseas consultar sobre los informes pendientes de este mes, la tasa de cumplimiento o descargar los formatos?',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ]);
+  const [inputVal, setInputVal] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
+  
+  const popoverRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isThinking, isOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!inputVal.trim()) return;
+
+    const userMessage = {
+      id: Date.now(),
+      sender: 'user',
+      text: inputVal,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    const query = inputVal.toLowerCase();
+    setInputVal('');
+    setIsThinking(true);
+
+    setTimeout(() => {
+      let replyText = 'Entiendo tu consulta. Como asistente STIMI, puedo informarte que Wilson Martínez y Diana Carolina Ruiz tienen reportes listos para tu firma.';
+
+      if (query.includes('pendiente') || query.includes('revisión')) {
+        replyText = 'Actualmente hay 4 informes en estado "Pendiente de revisión": Wilson Martínez (GC), Diana Carolina Ruiz (GF) y Ana María Gómez tiene un informe de tipo GC rechazado con observaciones.';
+      } else if (query.includes('cumplimiento') || query.includes('porcentaje') || query.includes('tasa')) {
+        replyText = 'La tasa de cumplimiento general del período de Julio 2026 es del 80%. Carlos Mario Restrepo y Diana Carolina Ruiz lideran el cumplimiento con informes validados.';
+      } else if (query.includes('formato') || query.includes('gth') || query.includes('descargar')) {
+        replyText = 'Los formatos vigentes son el GTH-F-062 GC (para gestión contractual) y el Formato GF (para gestión financiera). Puedes descargarlos desde el botón correspondiente en tu panel de inicio.';
+      } else if (query.includes('recordatorio') || query.includes('alertar')) {
+        replyText = 'He detectado que Ana María Gómez y Wilson Martínez tienen informes pendientes de entrega o corrección. Puedes enviarles un recordatorio automático desde la sección de alertas en la vista de Inicio.';
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: 'assistant',
+          text: replyText,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+      setIsThinking(false);
+    }, 1000);
+  };
+
+  const handleQuickQuestion = (question) => {
+    setInputVal(question);
+  };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-40" ref={popoverRef}>
+      {/* Floating Action Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-12 h-12 rounded-full bg-sena-green text-white shadow-lg flex items-center justify-center hover:bg-sena-green-hover hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+        title="Asistente de Coordinación"
+      >
+        <FiCpu className="w-5 h-5" />
+      </button>
+
+      {/* Popover Chat */}
+      {isOpen && (
+        <div className="absolute bottom-14 right-0 w-96 bg-white border border-gray-100 rounded-2xl shadow-xl flex flex-col h-[480px] overflow-hidden animate-fade-in origin-bottom-right z-50 transition-all duration-200 transform scale-100">
+          
+          {/* Header */}
+          <div className="bg-sena-green text-white px-4 py-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center">
+                <FiCpu className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h4 className="font-bold text-xs uppercase tracking-wider">Asistente STIMI</h4>
+                <span className="text-[9px] text-green-200 font-bold uppercase tracking-wider block -mt-0.5">En línea</span>
+              </div>
+            </div>
+            <button 
+              onClick={() => setIsOpen(false)}
+              className="text-white/80 hover:text-white transition-colors cursor-pointer"
+            >
+              <FiX className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50">
+            {messages.map((msg) => {
+              const isAss = msg.sender === 'assistant';
+              return (
+                <div 
+                  key={msg.id}
+                  className={`flex gap-2 max-w-[85%] ${isAss ? 'self-start' : 'self-end ml-auto flex-row-reverse'}`}
+                >
+                  <div className="space-y-0.5">
+                    <div className={`p-3 rounded-xl text-[11px] leading-relaxed ${
+                      isAss 
+                        ? 'bg-white text-gray-700 rounded-tl-none border border-gray-100 shadow-xs' 
+                        : 'bg-sena-green text-white rounded-tr-none'
+                    }`}>
+                      <p>{msg.text}</p>
+                    </div>
+                    <span className={`text-[8px] font-medium text-gray-400 block ${isAss ? 'text-left' : 'text-right'}`}>
+                      {msg.time}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {isThinking && (
+              <div className="flex gap-2 max-w-[80%] self-start">
+                <div className="bg-white border border-gray-100 rounded-xl rounded-tl-none p-2.5 flex items-center gap-1 shadow-xs">
+                  <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                  <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                  <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Quick suggestions */}
+          <div className="px-4 py-2 bg-white border-t border-gray-50 flex gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none">
+            <button 
+              onClick={() => handleQuickQuestion('¿Cuáles informes están pendientes?')}
+              className="text-[9px] font-semibold bg-gray-50 hover:bg-sena-green-light border border-gray-100 hover:border-green-200 text-gray-600 hover:text-sena-green px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+            >
+              Pendientes
+            </button>
+            <button 
+              onClick={() => handleQuickQuestion('¿Cuál es la tasa de cumplimiento?')}
+              className="text-[9px] font-semibold bg-gray-50 hover:bg-sena-green-light border border-gray-100 hover:border-green-200 text-gray-600 hover:text-sena-green px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+            >
+              Cumplimiento
+            </button>
+            <button 
+              onClick={() => handleQuickQuestion('¿Cómo descargo los formatos?')}
+              className="text-[9px] font-semibold bg-gray-50 hover:bg-sena-green-light border border-gray-100 hover:border-green-200 text-gray-600 hover:text-sena-green px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+            >
+              Formatos
+            </button>
+          </div>
+
+          {/* Input Form */}
+          <div className="border-t border-gray-100 p-3 bg-white">
+            <form onSubmit={handleSend} className="flex gap-2">
+              <input
+                type="text"
+                value={inputVal}
+                onChange={(e) => setInputVal(e.target.value)}
+                placeholder="Escribe tu consulta... (Enter)"
+                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
+              />
+              <button
+                type="submit"
+                className="px-3 py-2 bg-sena-green hover:bg-sena-green-hover text-white rounded-xl transition-all flex items-center justify-center shadow-xs"
+              >
+                <FiSend className="w-3.5 h-3.5" />
+              </button>
+            </form>
+          </div>
+
+        </div>
+      )}
+    </div>
+  );
+}

@@ -7,7 +7,10 @@ const MOCK_USERS = [
     email: 'coordinador@sena.edu.co',
     password: '1234',
     role: 'coordinador',
-    nombreCompleto: 'Coordinador STIMI'
+    nombreCompleto: 'Ana María González',
+    documento: '52887643',
+    centro: 'Centro de Servicios y Gestión Empresarial - Regional Antioquia',
+    vinculacion: 'Contratista - Desde Febrero 2024'
   },
   {
     email: 'instructor@sena.edu.co',
@@ -40,7 +43,10 @@ export function AuthProvider({ children }) {
           const userData = {
             email: foundUser.email,
             role: foundUser.role,
-            nombreCompleto: foundUser.nombreCompleto
+            nombreCompleto: foundUser.nombreCompleto,
+            documento: foundUser.documento || '',
+            centro: foundUser.centro || '',
+            vinculacion: foundUser.vinculacion || ''
           };
           setUser(userData);
           localStorage.setItem('stimi_user', JSON.stringify(userData));
