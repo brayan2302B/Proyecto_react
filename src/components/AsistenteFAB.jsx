@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiCpu, FiSend, FiHelpCircle, FiClock, FiX } from 'react-icons/fi';
+import { FiZap, FiSend, FiHelpCircle, FiClock, FiX, FiCpu } from 'react-icons/fi';
 import { toast } from 'sonner';
 
 export default function AsistenteFAB() {
@@ -98,14 +98,14 @@ export default function AsistenteFAB() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40" ref={popoverRef}>
+    <div className="relative" ref={popoverRef}>
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-12 h-12 rounded-full bg-sena-green text-white shadow-lg flex items-center justify-center hover:bg-sena-green-hover hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
         title="Asistente de Coordinación"
       >
-        <FiCpu className="w-5 h-5" />
+        <FiZap className="w-5 h-5" />
       </button>
 
       {/* Popover Chat */}
