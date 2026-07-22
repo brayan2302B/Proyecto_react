@@ -8,20 +8,22 @@ import Login from './pages/Login';
 import RecuperarContrasena from './pages/RecuperarContrasena';
 import Registro from './pages/Registro';
 import DashboardPlaceholder from './pages/DashboardPlaceholder';
+
 import CoordinadorLayout from './layouts/CoordinadorLayout';
-import Dashboard from './pages/coordinador/Dashboard';
+import DashboardCoordinador from './pages/coordinador/Dashboard';
 import RevisionInformes from './pages/coordinador/RevisionInformes';
 import Reportes from './pages/coordinador/Reportes';
 import GestionUsuarios from './pages/coordinador/GestionUsuarios';
-import Configuracion from './pages/coordinador/Configuracion';
+import ConfiguracionCoordinador from './pages/coordinador/Configuracion';
 import AsistenteIA from './pages/coordinador/AsistenteIA';
-import InstructorLayout from './layouts/InstructorLayout';
-import Dashboard from './pages/instructor/Dashboard';
-import MisInformes from './pages/instructor/MisInformes';
-import Configuracion from './pages/instructor/Configuracion';
 
+import InstructorLayout from './layouts/InstructorLayout';
+import DashboardInstructor from './pages/instructor/Dashboard';
+import MisInformes from './pages/instructor/MisInformes';
+import ConfiguracionInstructor from './pages/instructor/Configuracion';
 import PeriodoActual from './pages/instructor/PeriodoActual';
 import Perfil from './pages/instructor/Perfil';
+
 import { useAuth } from './hooks/useAuth';
 
 function RootRedirect() {
@@ -53,11 +55,10 @@ function App() {
               }
             >
               <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="dashboard" element={<DashboardInstructor />} />
               <Route path="informes" element={<MisInformes />} />
               <Route path="periodo-actual" element={<PeriodoActual />} />
-              <Route path="configuracion" element={<Configuracion />} />
-
+              <Route path="configuracion" element={<ConfiguracionInstructor />} />
               <Route path="perfil" element={<Perfil />} />
             </Route>
 
@@ -70,11 +71,11 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Dashboard />} />
+              <Route index element={<DashboardCoordinador />} />
               <Route path="revision" element={<RevisionInformes />} />
               <Route path="reportes" element={<Reportes />} />
               <Route path="usuarios" element={<GestionUsuarios />} />
-              <Route path="configuracion" element={<Configuracion />} />
+              <Route path="configuracion" element={<ConfiguracionCoordinador />} />
               <Route path="asistente" element={<AsistenteIA />} />
             </Route>
 

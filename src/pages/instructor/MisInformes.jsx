@@ -13,7 +13,7 @@ import {
   FiEye, 
   FiAlertCircle
 } from 'react-icons/fi';
-import { mockInformes, addVersion } from '../../services/informesService';
+import { getInformes, addVersion } from '../../services/informesService';
 
 export default function MisInformes() {
   const [informesState, setInformesState] = useState([]);
@@ -31,7 +31,7 @@ export default function MisInformes() {
 
   // Load initial reports state
   useEffect(() => {
-    setInformesState([...mockInformes]);
+    getInformes().then(data => setInformesState(data));
   }, []);
 
   useEffect(() => {
@@ -114,22 +114,26 @@ export default function MisInformes() {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) return;
 
     setIsUploading(true);
-    setTimeout(() => {
-      setIsUploading(false);
-      
+    try {
       const sizeStr = (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB';
-      
-      // Add version to service
-      addVersion(selectedPeriod, selectedType, selectedFile.name, sizeStr);
-      
-      // Sync local state
-      setInformesState([...mockInformes]);
+
+      // Wait for the service to persist the new version
+      await addVersion(selectedPeriod, selectedType, 'inst-1', selectedFile.name, sizeStr);
+
+      // Refresh local state from the service (single source of truth)
+      const updated = await getInformes();
+      setInformesState(updated);
       setStep(4); // Success step
-    }, 1500);
+    } catch (err) {
+      console.error('Error al subir informe:', err);
+      alert('Ocurrió un error al subir el informe. Intenta de nuevo.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const openModal = () => {

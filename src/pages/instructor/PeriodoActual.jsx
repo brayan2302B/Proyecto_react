@@ -14,7 +14,7 @@ import {
   FiX,
   FiArrowLeft
 } from 'react-icons/fi';
-import { mockInformes, addVersion, simulateCoordinadorAction } from '../../services/informesService';
+import { getInformes, addVersion, updateEstadoInforme } from '../../services/informesService';
 
 export default function PeriodoActual() {
   const [informesState, setInformesState] = useState([]);
@@ -32,7 +32,7 @@ export default function PeriodoActual() {
 
   // Load initial reports state
   useEffect(() => {
-    setInformesState([...mockInformes]);
+    getInformes().then(data => setInformesState(data));
   }, []);
 
   useEffect(() => {
@@ -88,22 +88,26 @@ export default function PeriodoActual() {
     }
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!selectedFile) return;
 
     setIsUploading(true);
-    setTimeout(() => {
-      setIsUploading(false);
-      
+    try {
       const sizeStr = (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB';
-      
-      // Add version to service mock state
-      addVersion('Julio 2026', selectedType, selectedFile.name, sizeStr);
-      
-      // Update state
-      setInformesState([...mockInformes]);
+
+      // Wait for the service to persist the new version
+      await addVersion('Julio 2026', selectedType, 'inst-1', selectedFile.name, sizeStr);
+
+      // Refresh local state from the service (single source of truth)
+      const updated = await getInformes();
+      setInformesState(updated);
       setStep(4); // Success step
-    }, 1500);
+    } catch (err) {
+      console.error('Error al subir informe:', err);
+      alert('Ocurrió un error al subir el informe. Intenta de nuevo.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const openModal = () => {
@@ -121,9 +125,22 @@ export default function PeriodoActual() {
     return informesState.find(inf => inf.periodo === "Julio 2026" && inf.tipo === type);
   };
 
-  const handleSimulateAction = (type, action, comment = "") => {
-    simulateCoordinadorAction("Julio 2026", type, action, comment);
-    setInformesState([...mockInformes]);
+  const handleSimulateAction = async (type, action, comment = "") => {
+    try {
+      // Find the informe id to pass to updateEstadoInforme
+      const informe = informesState.find(
+        inf => inf.periodo === 'Julio 2026' && inf.tipo === type
+      );
+      if (!informe) return;
+
+      await updateEstadoInforme(informe.id, action, comment);
+
+      // Refresh local state from the service
+      const updated = await getInformes();
+      setInformesState(updated);
+    } catch (err) {
+      console.error('Error al simular acción:', err);
+    }
   };
 
   return (
