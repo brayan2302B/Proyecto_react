@@ -1,95 +1,109 @@
-// Simulated API Service for Reports (Informes)
+// src/services/informesService.js
+
 let MOCK_INFORMES = [
   {
     id: 'inf-1',
     instructorId: 'inst-1',
     instructorNombre: 'Wilson Martínez',
-    mes: 'Julio 2026',
-    tipo: 'GC',
-    estado: 'pendiente',
-    fechaEnvio: '2026-07-15T10:30:00',
-    archivoNombre: 'GTH-F-062_GC_Wilson_Martinez_Julio.pdf',
-    comentarios: '',
-    area: 'Análisis y Desarrollo de Software'
+    periodo: 'Julio 2026',
+    tipo: 'GC', // GC = Contractual, GF = Financiero
+    area: 'Análisis y Desarrollo de Software',
+    versiones: [
+      {
+        version: 1,
+        archivo: 'GTH-F-062_GC_Wilson_Martinez_Julio.pdf',
+        size: 245000,
+        fecha: '2026-07-15T10:30:00',
+        estado: 'pendiente', // 'pendiente' | 'aprobado' | 'rechazado'
+        comentarios: ''
+      }
+    ]
   },
   {
     id: 'inf-2',
     instructorId: 'inst-1',
     instructorNombre: 'Wilson Martínez',
-    mes: 'Julio 2026',
+    periodo: 'Julio 2026',
     tipo: 'GF',
-    estado: 'aprobado',
-    fechaEnvio: '2026-07-15T10:35:00',
-    fechaRevision: '2026-07-18T14:20:00',
-    archivoNombre: 'GTH-F-062_GF_Wilson_Martinez_Julio.pdf',
-    comentarios: 'Informe financiero correcto con todas las firmas.',
-    area: 'Análisis y Desarrollo de Software'
-  },
-  {
-    id: 'inf-3',
-    instructorId: 'inst-4',
-    instructorNombre: 'Diana Carolina Ruiz',
-    mes: 'Julio 2026',
-    tipo: 'GC',
-    estado: 'aprobado',
-    fechaEnvio: '2026-07-16T08:15:00',
-    fechaRevision: '2026-07-19T09:00:00',
-    archivoNombre: 'GTH-F-062_GC_Diana_Ruiz_Julio.pdf',
-    comentarios: 'Informe contractual validado.',
-    area: 'Análisis y Desarrollo de Software'
-  },
-  {
-    id: 'inf-4',
-    instructorId: 'inst-4',
-    instructorNombre: 'Diana Carolina Ruiz',
-    mes: 'Julio 2026',
-    tipo: 'GF',
-    estado: 'pendiente',
-    fechaEnvio: '2026-07-16T08:20:00',
-    archivoNombre: 'GTH-F-062_GF_Diana_Ruiz_Julio.pdf',
-    comentarios: '',
-    area: 'Análisis y Desarrollo de Software'
-  },
-  {
-    id: 'inf-5',
-    instructorId: 'inst-2',
-    instructorNombre: 'Ana María Gómez',
-    mes: 'Julio 2026',
-    tipo: 'GC',
-    estado: 'rechazado',
-    fechaEnvio: '2026-07-14T11:00:00',
-    fechaRevision: '2026-07-16T15:30:00',
-    archivoNombre: 'GTH-F-062_GC_Ana_Gomez_Julio.pdf',
-    comentarios: 'Falta firma digital en la página 3 del formato contractual.',
-    area: 'Redes y Telecomunicaciones'
+    area: 'Análisis y Desarrollo de Software',
+    versiones: [
+      {
+        version: 1,
+        archivo: 'GTH-F-062_GF_Wilson_Martinez_Julio.pdf',
+        size: 198000,
+        fecha: '2026-07-15T10:35:00',
+        estado: 'aprobado',
+        comentarios: 'Informe financiero correcto con todas las firmas.'
+      }
+    ]
   }
 ];
 
-export const informesService = {
-  getInformes: () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([...MOCK_INFORMES]);
-      }, 600);
-    });
-  },
+// ---------- Lectura ----------
 
-  updateEstadoInforme: (id, nuevoEstado, comentarios = '') => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = MOCK_INFORMES.findIndex((inf) => inf.id === id);
-        if (index !== -1) {
-          MOCK_INFORMES[index] = {
-            ...MOCK_INFORMES[index],
-            estado: nuevoEstado,
-            comentarios: comentarios,
-            fechaRevision: new Date().toISOString()
-          };
-          resolve({ ...MOCK_INFORMES[index] });
-        } else {
-          reject(new Error('Informe no encontrado'));
-        }
-      }, 800);
-    });
-  }
+export const getInformes = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve([...MOCK_INFORMES]), 600);
+  });
+};
+
+// Helper: última versión de un informe (la que importa mostrar/aprobar)
+export const getUltimaVersion = (informe) =>
+  informe.versiones[informe.versiones.length - 1];
+
+// ---------- Instructor: sube nueva versión ----------
+
+export const addVersion = (periodo, tipo, instructorId, archivoNombre, archivoSize) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      let informe = MOCK_INFORMES.find(
+        (inf) => inf.periodo === periodo && inf.tipo === tipo && inf.instructorId === instructorId
+      );
+
+      if (!informe) {
+        reject(new Error('Informe no encontrado para este instructor/periodo'));
+        return;
+      }
+
+      const nextVer = informe.versiones.length + 1;
+      const nuevaVersion = {
+        version: nextVer,
+        archivo: archivoNombre,
+        size: archivoSize,
+        fecha: new Date().toISOString(),
+        estado: 'pendiente',
+        comentarios: ''
+      };
+
+      informe.versiones.push(nuevaVersion);
+      resolve({ ...nuevaVersion });
+    }, 800);
+  });
+};
+
+// ---------- Coordinador: aprueba/rechaza la última versión ----------
+
+export const updateEstadoInforme = (id, nuevoEstado, comentarios = '') => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const informe = MOCK_INFORMES.find((inf) => inf.id === id);
+      if (!informe) {
+        reject(new Error('Informe no encontrado'));
+        return;
+      }
+
+      const ultima = getUltimaVersion(informe);
+      ultima.estado = nuevoEstado; // 'aprobado' | 'rechazado'
+      ultima.comentarios = comentarios;
+
+      resolve({ ...informe });
+    }, 800);
+  });
+};
+
+export const informesService = {
+  getInformes,
+  addVersion,
+  updateEstadoInforme,
+  getUltimaVersion
 };

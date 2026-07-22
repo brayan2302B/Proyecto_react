@@ -15,6 +15,13 @@ import Reportes from './pages/coordinador/Reportes';
 import GestionUsuarios from './pages/coordinador/GestionUsuarios';
 import Configuracion from './pages/coordinador/Configuracion';
 import AsistenteIA from './pages/coordinador/AsistenteIA';
+import InstructorLayout from './layouts/InstructorLayout';
+import Dashboard from './pages/instructor/Dashboard';
+import MisInformes from './pages/instructor/MisInformes';
+import Configuracion from './pages/instructor/Configuracion';
+
+import PeriodoActual from './pages/instructor/PeriodoActual';
+import Perfil from './pages/instructor/Perfil';
 import { useAuth } from './hooks/useAuth';
 
 function RootRedirect() {
@@ -41,10 +48,18 @@ function App() {
               path="/instructor"
               element={
                 <ProtectedRoute allowedRoles={['instructor']}>
-                  <DashboardPlaceholder />
+                  <InstructorLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="informes" element={<MisInformes />} />
+              <Route path="periodo-actual" element={<PeriodoActual />} />
+              <Route path="configuracion" element={<Configuracion />} />
+
+              <Route path="perfil" element={<Perfil />} />
+            </Route>
 
             {/* Protected Coordinador Route Layout */}
             <Route
