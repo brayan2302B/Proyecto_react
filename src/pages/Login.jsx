@@ -177,7 +177,7 @@ export default function Login() {
           </div>
 
           {/* Forgot password link */}
-          <div className="flex justify-end">
+          <div className="flex justify-center">
             <Link
               to="/recuperar-contrasena"
               className="text-xs font-semibold text-white underline hover:text-gray-200"
