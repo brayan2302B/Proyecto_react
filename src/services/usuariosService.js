@@ -62,12 +62,83 @@ let MOCK_USUARIOS = [
   }
 ];
 
+let MOCK_PENDIENTES = [
+  {
+    id: 'p-1',
+    nombre: 'Carlos Andrés Mendoza',
+    email: 'carlos.mendoza@sena.edu.co',
+    documento: '1098765432',
+    fechaRegistro: '2026-07-20',
+    rol: 'instructor',
+    area: 'Automatización Industrial'
+  },
+  {
+    id: 'p-2',
+    nombre: 'Laura Sofía Pinzón',
+    email: 'laura.pinzon@sena.edu.co',
+    documento: '1054321098',
+    fechaRegistro: '2026-07-21',
+    rol: 'instructor',
+    area: 'Biotecnología'
+  }
+];
+
 export const usuariosService = {
   getUsuarios: () => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve([...MOCK_USUARIOS]);
       }, 500);
+    });
+  },
+
+  getSolicitudesPendientes: () => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve([...MOCK_PENDIENTES]);
+      }, 500);
+    });
+  },
+
+  aprobarSolicitud: (id) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const index = MOCK_PENDIENTES.findIndex((p) => p.id === id);
+        if (index !== -1) {
+          const solicitud = MOCK_PENDIENTES[index];
+          // Remove from pending
+          MOCK_PENDIENTES.splice(index, 1);
+          // Add to active users
+          const nuevoUsuario = {
+            id: `u-${Date.now()}`,
+            nombre: solicitud.nombre,
+            email: solicitud.email,
+            rol: solicitud.rol,
+            estado: 'activo',
+            documento: solicitud.documento,
+            area: solicitud.area || 'Área General',
+            fichas: []
+          };
+          MOCK_USUARIOS.push(nuevoUsuario);
+          resolve(nuevoUsuario);
+        } else {
+          reject(new Error('Solicitud no encontrada'));
+        }
+      }, 700);
+    });
+  },
+
+  rechazarSolicitud: (id) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const index = MOCK_PENDIENTES.findIndex((p) => p.id === id);
+        if (index !== -1) {
+          const eliminado = MOCK_PENDIENTES.splice(index, 1);
+          resolve(eliminado[0]);
+        } else {
+          reject(new Error('Solicitud no encontrada'));
+        }
+      }, 650);
     });
   },
 

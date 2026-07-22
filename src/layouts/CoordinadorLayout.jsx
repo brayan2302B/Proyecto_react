@@ -61,6 +61,7 @@ export default function CoordinadorLayout() {
     { path: '/coordinador/reportes', icon: FiBarChart2, label: 'Reportes' },
     { path: '/coordinador/usuarios', icon: FiUsers, label: 'Usuarios' },
     { path: '/coordinador/configuracion', icon: FiSettings, label: 'Configuración' },
+    { path: '/coordinador/perfil', icon: FiUser, label: 'Mi Perfil' },
   ];
 
   const isLinkActive = (item) => {

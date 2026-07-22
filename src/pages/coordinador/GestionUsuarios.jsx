@@ -11,12 +11,16 @@ import {
   FiXCircle, 
   FiMail, 
   FiShield, 
-  FiGrid 
+  FiGrid,
+  FiCalendar,
+  FiCheck,
+  FiX
 } from 'react-icons/fi';
 import { toast } from 'sonner';
 
 export default function GestionUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
+  const [pendientes, setPendientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -36,8 +40,12 @@ export default function GestionUsuarios() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const data = await usuariosService.getUsuarios();
+      const [data, dataPendientes] = await Promise.all([
+        usuariosService.getUsuarios(),
+        usuariosService.getSolicitudesPendientes()
+      ]);
       setUsuarios(data);
+      setPendientes(dataPendientes);
     } catch (err) {
       toast.error('Error al cargar la lista de usuarios');
     } finally {
@@ -93,6 +101,27 @@ export default function GestionUsuarios() {
       await loadUsers();
     } catch (err) {
       toast.error('No se pudo eliminar el usuario');
+    }
+  };
+
+  const handleAprobarSolicitud = async (id, nombre) => {
+    try {
+      await usuariosService.aprobarSolicitud(id);
+      toast.success(`Usuario ${nombre} aprobado y activado en el sistema`);
+      await loadUsers();
+    } catch (err) {
+      toast.error('No se pudo aprobar la solicitud');
+    }
+  };
+
+  const handleRechazarSolicitud = async (id, nombre) => {
+    if (!window.confirm(`¿Está seguro de rechazar la solicitud de registro de ${nombre}?`)) return;
+    try {
+      await usuariosService.rechazarSolicitud(id);
+      toast.success(`Solicitud de ${nombre} rechazada y eliminada`);
+      await loadUsers();
+    } catch (err) {
+      toast.error('No se pudo rechazar la solicitud');
     }
   };
 
@@ -330,6 +359,83 @@ export default function GestionUsuarios() {
           );
         })}
       </div>
+
+      {/* Seccion de Usuarios Pendientes de Aprobacion */}
+      {pendientes.length > 0 && (
+        <div className="bg-red-50/30 border-2 border-red-200/60 rounded-3xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-red-800">Usuarios Pendientes de Aprobación</h3>
+                <span className="bg-red-500 text-white text-xs font-extrabold px-2 py-0.5 rounded-full">
+                  {pendientes.length}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">Solicitudes de registro que requieren aprobación</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {pendientes.map((p) => (
+              <div 
+                key={p.id}
+                className="bg-white border border-red-100 rounded-2xl p-4 flex flex-col md:flex-row justify-between md:items-center gap-4 hover:shadow-md transition-shadow"
+              >
+                <div className="space-y-1.5 flex-1">
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-bold text-gray-800 text-sm">{p.nombre}</h4>
+                    <span className="text-[9px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      {p.rol}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-0.5">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <FiMail className="text-gray-400 flex-shrink-0" />
+                      <span className="truncate">{p.email}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <FiGrid className="text-gray-400 flex-shrink-0" />
+                      <span>Doc: {p.documento}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <FiCalendar className="text-gray-400 flex-shrink-0" />
+                      <span>Registrado: {p.fechaRegistro}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 border-t border-gray-50 pt-3 md:pt-0 md:border-t-0 justify-end">
+                  <button
+                    onClick={() => toast.info(`Detalles de Solicitud:\nNombre: ${p.nombre}\nRol: ${p.rol}\nÁrea: ${p.area || 'General'}\nFecha: ${p.fechaRegistro}`)}
+                    className="px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-100 text-xs font-semibold flex items-center gap-1 transition-all"
+                    title="Ver solicitud"
+                  >
+                    <FiEye className="w-3.5 h-3.5" /> Ver
+                  </button>
+
+                  <button
+                    onClick={() => handleAprobarSolicitud(p.id, p.nombre)}
+                    className="px-3 py-1.5 rounded-xl bg-green-50 hover:bg-green-100 text-sena-green border border-green-150 text-xs font-semibold flex items-center gap-1 transition-all"
+                    title="Aprobar solicitud"
+                  >
+                    <FiCheck className="w-3.5 h-3.5" /> Aprobar
+                  </button>
+
+                  <button
+                    onClick={() => handleRechazarSolicitud(p.id, p.nombre)}
+                    className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 text-xs font-semibold flex items-center gap-1 transition-all"
+                    title="Rechazar solicitud"
+                  >
+                    <FiX className="w-3.5 h-3.5" /> Rechazar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Create / Edit Modal Dialog */}
       {isModalOpen && (
