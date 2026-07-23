@@ -12,6 +12,9 @@ import {
   FiSend 
 } from 'react-icons/fi';
 import { toast } from 'sonner';
+import PeriodoCard from '../../components/PeriodoCard';
+import StatCard from '../../components/StatCard';
+import PageContainer from '../../components/PageContainer';
 
 export default function Dashboard() {
   const [instructores, setInstructores] = useState([]);
@@ -71,7 +74,7 @@ export default function Dashboard() {
   const instructoresSinInforme = instructores.filter(inst => inst.informesPendientes > 0);
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       
       {/* Title */}
       <div>
@@ -80,86 +83,52 @@ export default function Dashboard() {
       </div>
 
       {/* Active Period / Periodo de Carga */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-gray-400 uppercase tracking-wide">Período de carga activo</span>
-            <span className="bg-sena-green-light text-sena-green text-xs font-bold px-2.5 py-1 rounded-full">Habilitado</span>
-          </div>
-          <h3 className="text-xl font-bold text-gray-800">Julio 2026</h3>
-          <p className="text-xs text-red-500 font-medium">Fecha límite de presentación: 05 de Agosto de 2026, 23:59</p>
-          <p className="text-xs text-gray-400 max-w-xl">
-            Recuerde que los instructores deben estructurar sus carpetas con los archivos debidamente firmados y cargados al repositorio Drive asignado.
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <a 
-            href="#format-gc"
-            onClick={(e) => { e.preventDefault(); toast.info('Descargando formato GTH-F-062 GC...'); }}
-            className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 hover:-translate-y-0.5 hover:shadow-sm"
-          >
-            <FiFileText className="w-4 h-4" /> GTH-F-062 GC (Contractual)
-          </a>
-          <a 
-            href="#format-gf"
-            onClick={(e) => { e.preventDefault(); toast.info('Descargando formato GF...'); }}
-            className="px-4 py-2.5 bg-sena-green hover:bg-sena-green-hover text-white text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <FiFileText className="w-4 h-4" /> Formato GF (Financiero)
-          </a>
-        </div>
-      </div>
+      <PeriodoCard isEditable={true} />
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         
         {/* Metric 1 */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
-            <FiUsers className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs font-medium text-gray-400 block uppercase">Total Instructores</span>
-            <span className="text-3xl font-bold text-gray-800">{totalInstructores}</span>
-            <span className="text-xs text-gray-400 block mt-0.5">{totalAprendices} aprendices activos</span>
-          </div>
-        </div>
+        <StatCard
+          icon={FiUsers}
+          title="Total Instructores"
+          value={totalInstructores}
+          subtext={`${totalAprendices} aprendices activos`}
+          iconBgClass="bg-blue-50"
+          iconColorClass="text-blue-500"
+        />
 
         {/* Metric 2 */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
-            <FiFileText className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs font-medium text-gray-400 block uppercase">Pendientes Revisión</span>
-            <span className="text-3xl font-bold text-gray-800">{pendientesRevision}</span>
-            <span className="text-xs text-amber-500 font-semibold block mt-0.5">Informes recibidos</span>
-          </div>
-        </div>
+        <StatCard
+          icon={FiFileText}
+          title="Pendientes Revisión"
+          value={pendientesRevision}
+          subtext="Informes recibidos"
+          subtextClass="text-amber-500 font-semibold"
+          iconBgClass="bg-amber-50"
+          iconColorClass="text-amber-500"
+        />
 
         {/* Metric 3 */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-sena-green">
-            <FiCheckCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs font-medium text-gray-400 block uppercase">Informes Validados</span>
-            <span className="text-3xl font-bold text-gray-800">{informesValidados}</span>
-            <span className="text-xs text-sena-green font-semibold block mt-0.5">Firma avalada</span>
-          </div>
-        </div>
+        <StatCard
+          icon={FiCheckCircle}
+          title="Informes Validados"
+          value={informesValidados}
+          subtext="Firma avalada"
+          subtextClass="text-sena-green font-semibold"
+          iconBgClass="bg-green-50"
+          iconColorClass="text-[#407754]"
+        />
 
         {/* Metric 4 */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500">
-            <FiActivity className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs font-medium text-gray-400 block uppercase">% Cumplimiento</span>
-            <span className="text-3xl font-bold text-gray-800">{cumplimientoPorcentaje}%</span>
-            <span className="text-xs text-gray-400 block mt-0.5">De informes aprobados</span>
-          </div>
-        </div>
+        <StatCard
+          icon={FiActivity}
+          title="% Cumplimiento"
+          value={`${cumplimientoPorcentaje}%`}
+          subtext="De informes aprobados"
+          iconBgClass="bg-purple-50"
+          iconColorClass="text-purple-500"
+        />
 
       </div>
 
@@ -225,6 +194,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-    </div>
+    </PageContainer>
   );
 }

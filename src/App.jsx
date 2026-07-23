@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './components/ThemeContext';
 import { AuthProvider, AuthContext } from './components/AuthContext';
+import { PeriodoProvider } from './components/PeriodoContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Toaster } from 'sonner';
 import Login from './pages/Login';
@@ -16,6 +17,7 @@ import Reportes from './pages/coordinador/Reportes';
 import GestionUsuarios from './pages/coordinador/GestionUsuarios';
 import ConfiguracionCoordinador from './pages/coordinador/Configuracion';
 import AsistenteIA from './pages/coordinador/AsistenteIA';
+import PerfilCoordinador from './pages/coordinador/Perfil';
 
 import InstructorLayout from './layouts/InstructorLayout';
 import DashboardInstructor from './pages/instructor/Dashboard';
@@ -37,9 +39,10 @@ function RootRedirect() {
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+      <PeriodoProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
@@ -77,15 +80,17 @@ function App() {
               <Route path="usuarios" element={<GestionUsuarios />} />
               <Route path="configuracion" element={<ConfiguracionCoordinador />} />
               <Route path="asistente" element={<AsistenteIA />} />
+              <Route path="perfil" element={<PerfilCoordinador />} />
             </Route>
 
             {/* Root & Fallback redirects */}
             <Route path="/" element={<RootRedirect />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
-        </BrowserRouter>
-        <Toaster position="top-right" richColors />
-      </AuthProvider>
+          </BrowserRouter>
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
+      </PeriodoProvider>
     </ThemeProvider>
   );
 }

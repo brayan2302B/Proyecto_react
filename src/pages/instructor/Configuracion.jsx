@@ -1,260 +1,246 @@
 import React, { useState } from 'react';
-import { FiBell, FiShield, FiCpu, FiMonitor, FiGlobe, FiAlertTriangle, FiInfo } from 'react-icons/fi';
+import { 
+  FiBell, 
+  FiKey, 
+  FiCpu, 
+  FiSettings,
+  FiGlobe,
+  FiMonitor
+} from 'react-icons/fi';
+import { toast } from 'sonner';
+import PageContainer from '../../components/PageContainer';
+import SettingsTabs from '../../components/SettingsTabs';
 
 export default function Configuracion() {
   const [activeTab, setActiveTab] = useState('general');
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Toggle states for notifications
-  const [toggles, setToggles] = useState({
-    informesPendientes: true,
-    evidencias: true,
-    seguimiento: true,
-    correo: false,
-  });
-
-  const toggleKeys = [
-    { key: 'informesPendientes', label: 'Alertas de informes pendientes' },
-    { key: 'evidencias', label: 'Alertas de evidencias' },
-    { key: 'seguimiento', label: 'Alertas de seguimiento a aprendices' },
-    { key: 'correo', label: 'Notificaciones por correo electrónico' },
-  ];
-
-  const tabs = [
-    { id: 'general', label: 'General', icon: FiMonitor },
-    { id: 'seguridad', label: 'Seguridad', icon: FiShield },
-    { id: 'sistema', label: 'Sistema', icon: FiCpu },
-  ];
+  const [notifPendientes, setNotifPendientes] = useState(true);
+  const [notifEvidencias, setNotifEvidencias] = useState(true);
+  const [notifSeguimiento, setNotifSeguimiento] = useState(true);
+  const [notifCorreo, setNotifCorreo] = useState(false);
 
   const handleSave = () => {
-    setLoading(true);
+    setSaving(true);
     setTimeout(() => {
-      setLoading(false);
+      setSaving(false);
+      toast.success('Configuración de instructor guardada correctamente');
     }, 800);
   };
 
-  const handleToggle = (key) => {
-    setToggles(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleCancel = () => {
+    setNotifPendientes(true);
+    setNotifEvidencias(true);
+    setNotifSeguimiento(true);
+    setNotifCorreo(false);
+    toast.info('Se han descartado los cambios en la configuración');
   };
 
-  // Reusable footer buttons
-  const FooterButtons = () => (
-    <div className="mt-10 pt-6 border-t border-gray-100 flex justify-end gap-3">
-      <button className="px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-200 rounded-xl transition-colors">
-        Cancelar
-      </button>
-      <button 
-        onClick={handleSave}
-        disabled={loading}
-        className="px-6 py-2.5 bg-[#407754] hover:bg-[#346244] text-white text-sm font-bold rounded-xl shadow-sm transition-all flex items-center gap-2"
+  // Switch wrapper component for clean render
+  const SwitchItem = ({ label, desc, checked, onChange }) => (
+    <div className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+      <div className="space-y-0.5">
+        <span className="text-xs font-bold text-gray-700 block">{label}</span>
+        <span className="text-[10px] text-gray-400 block leading-tight">{desc}</span>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#407754] focus:ring-offset-2 cursor-pointer ${
+          checked ? 'bg-[#407754]' : 'bg-gray-200'
+        }`}
       >
-        {loading ? (
-          <>
-            <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            Guardando...
-          </>
-        ) : (
-          'Guardar configuración'
-        )}
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out ${
+            checked ? 'translate-x-5' : 'translate-x-0'
+          }`}
+        />
       </button>
     </div>
   );
 
-  return (
-    <div className="p-8 max-w-5xl mx-auto animate-in fade-in duration-500">
-      
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Configuración</h1>
-        <p className="text-gray-500 mt-1 font-medium">Personaliza tu experiencia en STIMI</p>
-      </div>
-
-      {/* Tabs Layout */}
-      <div className="flex flex-col md:flex-row gap-8">
-        
-        {/* Sidebar Tabs */}
-        <div className="w-full md:w-64 shrink-0">
-          <nav className="flex md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition-all whitespace-nowrap ${
-                  activeTab === tab.id 
-                    ? 'bg-[#407754] text-white shadow-md shadow-green-900/10' 
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? 'text-white' : 'text-gray-400'}`} />
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+  const renderGeneralTab = () => (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Notifications Card */}
+      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-4">
+          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+            <FiBell className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Alertas de Notificaciones</h3>
+            <p className="text-xs text-gray-400">Personaliza las alertas que deseas recibir</p>
+          </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 overflow-y-auto">
-          
-          {/* Tab: General */}
-          {activeTab === 'general' && (
-            <div className="space-y-8 animate-in fade-in">
-              {/* Notificaciones */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
-                  <FiBell className="text-gray-400" /> Notificaciones
-                </h3>
-                <div className="space-y-4">
-                  {toggleKeys.map(({ key, label }) => (
-                    <label key={key} className="flex items-center justify-between cursor-pointer group">
-                      <span className="text-sm text-gray-700 font-medium group-hover:text-gray-900">{label}</span>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={toggles[key]}
-                        onClick={() => handleToggle(key)}
-                        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#407754] focus:ring-offset-2 ${
-                          toggles[key] ? 'bg-[#407754]' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out ${
-                            toggles[key] ? 'translate-x-5' : 'translate-x-0'
-                          }`}
-                        />
-                      </button>
-                    </label>
-                  ))}
-                </div>
-              </div>
+        <div className="space-y-1">
+          <SwitchItem 
+            label="Alertas de informes pendientes"
+            desc="Recibir recordatorios sobre informes GC/GF del mes actual pendientes de subir"
+            checked={notifPendientes}
+            onChange={setNotifPendientes}
+          />
+          <SwitchItem 
+            label="Alertas de evidencias"
+            desc="Notificar cuando el plan de formación requiera nuevas evidencias"
+            checked={notifEvidencias}
+            onChange={setNotifEvidencias}
+          />
+          <SwitchItem 
+            label="Alertas de seguimiento a aprendices"
+            desc="Recordatorios semanales sobre el registro de novedades de los aprendices"
+            checked={notifSeguimiento}
+            onChange={setNotifSeguimiento}
+          />
+          <SwitchItem 
+            label="Notificaciones por correo electrónico"
+            desc="Enviar copia del resumen de notificaciones al correo institucional"
+            checked={notifCorreo}
+            onChange={setNotifCorreo}
+          />
+        </div>
+      </div>
 
-              {/* Apariencia */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
-                  <FiMonitor className="text-gray-400" /> Apariencia e Idioma
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Tema</label>
-                    <select className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#407754] bg-white shadow-sm cursor-not-allowed opacity-80" disabled>
-                      <option>Claro (Por defecto)</option>
-                      <option>Oscuro (No disponible)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1.5">
-                      <FiGlobe className="w-4 h-4 text-gray-400" /> Idioma
-                    </label>
-                    <select className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#407754] bg-white shadow-sm cursor-not-allowed opacity-80" disabled>
-                      <option>Español (Colombia)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+      {/* Appearance Card */}
+      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
+          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+            <FiMonitor className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Apariencia e Idioma</h3>
+            <p className="text-xs text-gray-400">Preferencias de visualización regional</p>
+          </div>
+        </div>
 
-              <FooterButtons />
-            </div>
-          )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase">Tema visual</label>
+            <select 
+              disabled 
+              className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl text-xs font-semibold text-gray-400 outline-none cursor-not-allowed"
+            >
+              <option>Claro (Predeterminado del Sistema)</option>
+            </select>
+          </div>
 
-          {/* Tab: Seguridad */}
-          {activeTab === 'seguridad' && (
-            <div className="space-y-8 animate-in fade-in">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
-                  <FiShield className="text-gray-400" /> Seguridad de la Cuenta
-                </h3>
-                <p className="text-sm text-gray-500 mb-6 max-w-lg leading-relaxed">
-                  Actualiza tu contraseña periódicamente para mantener tu cuenta segura. La contraseña debe tener al menos 8 caracteres, incluyendo números y letras.
-                </p>
-                <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl max-w-md space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Contraseña Actual</label>
-                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#407754] outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Nueva Contraseña</label>
-                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#407754] outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Confirmar Nueva Contraseña</label>
-                    <input type="password" placeholder="••••••••" className="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#407754] outline-none" />
-                  </div>
-                  <button className="w-full py-2.5 bg-gray-900 hover:bg-black text-white text-sm font-bold rounded-xl mt-2 transition-colors">
-                    Actualizar Contraseña
-                  </button>
-                </div>
-              </div>
-
-              <FooterButtons />
-            </div>
-          )}
-
-          {/* Tab: Sistema */}
-          {activeTab === 'sistema' && (
-            <div className="space-y-8 animate-in fade-in">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
-                  <FiCpu className="text-gray-400" /> Información del Sistema
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <p className="text-xs text-gray-500 mb-1">Versión</p>
-                    <p className="font-bold text-gray-900">STIMI v1.0.0</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <p className="text-xs text-gray-500 mb-1">Rol</p>
-                    <p className="font-bold text-gray-900">Instructor</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
-                    <p className="text-xs text-gray-500 mb-1">Última actualización</p>
-                    <p className="font-bold text-gray-900">Julio 2026</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 col-span-2 sm:col-span-3">
-                    <p className="text-xs text-gray-500 mb-1">Sede / Centro</p>
-                    <p className="font-bold text-gray-900">Sede Yamboro, Centro de Gestión y Desarrollo Sostenible Surcolombiano (Regional Huila)</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 border border-blue-100 p-5 rounded-2xl flex gap-4">
-                <FiInfo className="w-6 h-6 text-blue-500 shrink-0" />
-                <div>
-                  <h4 className="font-bold text-blue-900 mb-1">Acerca de STIMI</h4>
-                  <p className="text-sm text-blue-800 leading-relaxed">
-                    Sistema de Trazabilidad de Informes Mensuales de Instructores. Diseñado para centralizar y agilizar la entrega de formatos.
-                  </p>
-                  <div className="mt-3 flex gap-2">
-                    <span className="bg-white text-blue-700 text-xs font-bold px-2 py-1 rounded shadow-sm">GC - GTH-F-062</span>
-                    <span className="bg-white text-emerald-700 text-xs font-bold px-2 py-1 rounded shadow-sm">GF - Gestión Financiera</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-bold text-red-600 mb-4 flex items-center gap-2 border-b border-gray-100 pb-2">
-                  <FiAlertTriangle /> Zona de Peligro
-                </h3>
-                <div className="bg-red-50 border border-red-100 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h4 className="font-bold text-red-900">Restaurar configuración</h4>
-                    <p className="text-xs text-red-700 mt-1 max-w-sm">
-                      Esta acción restablecerá todas tus preferencias de notificaciones a los valores por defecto.
-                    </p>
-                  </div>
-                  <button className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl shadow-sm transition-colors whitespace-nowrap">
-                    Restaurar por defecto
-                  </button>
-                </div>
-              </div>
-
-              <FooterButtons />
-            </div>
-          )}
-
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1.5">
+              <FiGlobe className="w-3.5 h-3.5" /> Idioma preferido
+            </label>
+            <select 
+              disabled 
+              className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl text-xs font-semibold text-gray-400 outline-none cursor-not-allowed"
+            >
+              <option>Español (Colombia)</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
+  );
+
+  const renderFirmaTab = () => (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
+          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+            <FiKey className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Firma Digital</h3>
+            <p className="text-xs text-gray-400">Visualización de llaves de firma del instructor</p>
+          </div>
+        </div>
+        
+        <p className="text-xs text-gray-500 leading-relaxed mb-3">
+          Tus informes aprobados son validados por el coordinador mediante firma criptográfica.
+        </p>
+        <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 inline-block font-mono text-[10px] text-gray-600">
+          ID Llave GPG: CSGE-REGIONAL-ANTIOQUIA-INST-WILSON
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSistemaTab = () => {
+    const infoItems = [
+      { label: 'Versión del Sistema', value: 'v1.2.0' },
+      { label: 'Regional', value: 'Huila' },
+      { label: 'Centro de Formación', value: 'Centro de Gestión y Desarrollo Sostenible Surcolombiano' },
+      { label: 'Rol de Usuario', value: 'Instructor Contratista' },
+      { label: 'Última Actualización', value: '23 de Julio de 2026' }
+    ];
+
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        {/* Info Card */}
+        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
+            <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+              <FiCpu className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900">Información del Sistema</h3>
+              <p className="text-xs text-gray-400">Detalles técnicos del entorno</p>
+            </div>
+          </div>
+
+          <div className="space-y-3.5 max-w-xl">
+            {infoItems.map((item) => (
+              <div key={item.label} className="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
+                <span className="text-xs text-gray-500 font-semibold">{item.label}</span>
+                <span className="text-xs font-extrabold text-gray-800 text-right">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Acerca de STIMI Card */}
+        <div className="bg-blue-50/70 border border-blue-100 rounded-3xl p-6 shadow-sm">
+          <h4 className="text-sm font-extrabold text-blue-900 mb-2">Acerca de STIMI</h4>
+          <p className="text-xs text-blue-800 leading-relaxed max-w-2xl mb-4">
+            STIMI (Sistema de Trazabilidad Mensual de Informes) permite a los instructores cargar y realizar el seguimiento de sus entregables mensuales GC y GF de manera ágil y digitalizada.
+          </p>
+          <div className="flex gap-2">
+            <span className="bg-[#407754] text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">GC - Gestión Contractual</span>
+            <span className="bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">GF - Gestión Financiera</span>
+          </div>
+        </div>
+
+        {/* Danger Zone Card */}
+        <div className="bg-red-50/50 border border-red-200 rounded-3xl p-6 shadow-sm">
+          <h4 className="text-sm font-extrabold text-red-700 mb-1">Zona de Peligro</h4>
+          <p className="text-[10px] text-gray-500 mb-4">Acciones irreversibles sobre tu cuenta</p>
+          <button
+            type="button"
+            onClick={() => toast.warning('Esta acción destructiva simulada está deshabilitada temporalmente.')}
+            className="px-4 py-2 border border-red-300 hover:bg-red-50 text-red-600 text-xs font-bold rounded-xl transition-all cursor-pointer"
+          >
+            Eliminar caché local del navegador
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <PageContainer maxWidth="max-w-5xl">
+      <SettingsTabs
+        title="Configuración"
+        subtitle="Personaliza el sistema de instructor de SITMI"
+        saving={saving}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        renderGeneralTab={renderGeneralTab}
+        renderFirmaTab={renderFirmaTab}
+        renderSistemaTab={renderSistemaTab}
+      />
+    </PageContainer>
   );
 }

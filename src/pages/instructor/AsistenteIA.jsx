@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiSend, FiInfo, FiMessageSquare, FiCpu, FiMoreHorizontal } from 'react-icons/fi';
 import logoSena from '../../assets/logo-sena.png';
+import PageContainer from '../../components/PageContainer';
 
 export default function AsistenteIA() {
   const [messages, setMessages] = useState([
@@ -62,7 +63,7 @@ export default function AsistenteIA() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto h-[calc(100vh-2rem)] flex flex-col animate-in fade-in duration-500">
+    <PageContainer maxWidth="max-w-4xl" className="h-[calc(100vh-2rem)] flex flex-col">
       
       {/* Header */}
       <div className="bg-white border border-gray-200 rounded-t-3xl p-5 shadow-sm flex items-center gap-4 z-10 relative">
@@ -186,6 +187,6 @@ export default function AsistenteIA() {
         </p>
       </div>
 
-    </div>
+    </PageContainer>
   );
 }

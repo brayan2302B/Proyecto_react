@@ -1,9 +1,10 @@
 import React from 'react';
 import { FiUser, FiMail, FiCreditCard, FiHash, FiBriefcase, FiMapPin, FiFileText, FiUsers, FiLock } from 'react-icons/fi';
+import PageContainer from '../../components/PageContainer';
 
 export default function Perfil() {
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <PageContainer maxWidth="max-w-5xl">
       
       {/* Header */}
       <div>
@@ -153,6 +154,6 @@ export default function Perfil() {
 
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

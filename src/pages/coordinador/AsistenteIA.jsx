@@ -9,6 +9,7 @@ import {
   FiTrendingUp 
 } from 'react-icons/fi';
 import { toast } from 'sonner';
+import PageContainer from '../../components/PageContainer';
 
 export default function AsistenteIA() {
   const [messages, setMessages] = useState([
@@ -87,7 +88,7 @@ export default function AsistenteIA() {
   ];
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       
       {/* Header */}
       <div className="flex justify-between items-center">
@@ -229,6 +230,6 @@ export default function AsistenteIA() {
 
       </div>
 
-    </div>
+    </PageContainer>
   );
 }

@@ -12,6 +12,7 @@ import {
   FiBookOpen
 } from 'react-icons/fi';
 import { toast } from 'sonner';
+import PageContainer from '../../components/PageContainer';
 
 export default function RevisionInformes() {
   const [informes, setInformes] = useState([]);
@@ -90,7 +91,7 @@ export default function RevisionInformes() {
   });
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       
       {/* Title */}
       <div>
@@ -295,6 +296,6 @@ export default function RevisionInformes() {
         </div>
       )}
 
-    </div>
+    </PageContainer>
   );
 }

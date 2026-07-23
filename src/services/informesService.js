@@ -61,8 +61,16 @@ export const addVersion = (periodo, tipo, instructorId, archivoNombre, archivoSi
       );
 
       if (!informe) {
-        reject(new Error('Informe no encontrado para este instructor/periodo'));
-        return;
+        informe = {
+          id: `inf-${MOCK_INFORMES.length + 1}`,
+          instructorId,
+          instructorNombre: 'Wilson Martínez',
+          periodo,
+          tipo,
+          area: 'Análisis y Desarrollo de Software',
+          versiones: []
+        };
+        MOCK_INFORMES.push(informe);
       }
 
       const nextVer = informe.versiones.length + 1;
