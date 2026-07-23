@@ -26,7 +26,7 @@ export default function SettingsTabs({
 
   const tabs = [
     { id: 'general', label: 'General' },
-    { id: 'firma', label: 'Firma Digital' },
+    ...(renderFirmaTab ? [{ id: 'firma', label: 'Firma Digital' }] : []),
     { id: 'seguridad', label: 'Seguridad' },
     { id: 'sistema', label: 'Sistema' }
   ];
@@ -136,7 +136,7 @@ export default function SettingsTabs({
   );
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6">
       {/* Title */}
       <div>
         <h2 className="text-2xl font-black text-[#407754]">{title}</h2>
@@ -171,8 +171,8 @@ export default function SettingsTabs({
         {activeTab === 'sistema' && renderSistemaTab && renderSistemaTab()}
       </div>
 
-      {/* Fixed Footer Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-150 py-4 px-6 md:px-8 z-40 flex justify-end gap-3 shadow-md">
+      {/* Action Buttons */}
+      <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-3">
         <button
           type="button"
           onClick={onCancel}
