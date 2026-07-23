@@ -63,10 +63,45 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('stimi_user');
   };
 
+  const changePassword = (currentPassword, newPassword) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        if (!user) {
+          reject(new Error('No hay sesión activa'));
+          return;
+        }
+
+        const foundUser = MOCK_USERS.find(
+          (u) => u.email.toLowerCase() === user.email.toLowerCase()
+        );
+
+        if (!foundUser) {
+          reject(new Error('Usuario no encontrado'));
+          return;
+        }
+
+        if (foundUser.password !== currentPassword) {
+          reject(new Error('La contraseña actual es incorrecta'));
+          return;
+        }
+
+        const hasLetter = /[a-zA-Z]/.test(newPassword);
+        const hasNumber = /[0-9]/.test(newPassword);
+        if (newPassword.length < 8 || !hasLetter || !hasNumber) {
+          reject(new Error('La contraseña debe tener al menos 8 caracteres e incluir letras y números.'));
+          return;
+        }
+
+        foundUser.password = newPassword;
+        resolve();
+      }, 1000);
+    });
+  };
+
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, changePassword }}>
       {children}
     </AuthContext.Provider>
   );

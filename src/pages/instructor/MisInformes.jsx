@@ -14,18 +14,23 @@ import {
   FiAlertCircle
 } from 'react-icons/fi';
 import { getInformes, addVersion } from '../../services/informesService';
+import { usePeriodo } from '../../components/PeriodoContext';
+import PageContainer from '../../components/PageContainer';
 
 export default function MisInformes() {
+  const { periodoInfo } = usePeriodo();
   const [informesState, setInformesState] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [step, setStep] = useState(1);
   const fileInputRef = useRef(null);
   
   // Modal state
-  const [selectedPeriod, setSelectedPeriod] = useState('');
+  const [selectedPeriod, setSelectedPeriod] = useState(periodoInfo.mesActivo);
   const [selectedType, setSelectedType] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  const [expandedFolderId, setExpandedFolderId] = useState(1); // default expand current month
 
   const location = useLocation();
 
@@ -35,14 +40,18 @@ export default function MisInformes() {
   }, []);
 
   useEffect(() => {
+    setSelectedPeriod(periodoInfo.mesActivo);
+  }, [periodoInfo.mesActivo]);
+
+  useEffect(() => {
     if (location.state?.openModal && location.state?.reportType) {
       setSelectedType(location.state.reportType);
-      setSelectedPeriod('Julio 2026'); 
+      setSelectedPeriod(periodoInfo.mesActivo); 
       setStep(3); // Jump to upload step
       setIsModalOpen(true);
       window.history.replaceState({}, document.title);
     }
-  }, [location]);
+  }, [location, periodoInfo.mesActivo]);
 
   // Mock data for static folders (Junio and Mayo)
   const [folders, setFolders] = useState([
@@ -69,8 +78,6 @@ export default function MisInformes() {
       validated: 2 
     },
   ]);
-
-  const [expandedFolderId, setExpandedFolderId] = useState(null);
 
   const resetModal = () => {
     setIsModalOpen(false);
@@ -148,7 +155,7 @@ export default function MisInformes() {
   };
 
   const getJulioReport = (type) => {
-    return informesState.find(inf => inf.periodo === "Julio 2026" && inf.tipo === type);
+    return informesState.find(inf => inf.periodo === periodoInfo.mesActivo && inf.tipo === type);
   };
 
   const julioReportGC = getJulioReport('GC');
@@ -180,7 +187,7 @@ export default function MisInformes() {
   const julioCounts = getJulioStatusCount();
 
   return (
-    <div className="p-8 max-w-6xl mx-auto animate-in fade-in duration-500 relative">
+    <PageContainer maxWidth="max-w-6xl" className="relative">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -212,7 +219,7 @@ export default function MisInformes() {
                 <FiFolder className={`w-8 h-8 ${expandedFolderId === 1 ? 'fill-current opacity-40' : 'fill-current opacity-20'}`} />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Julio 2026</h3>
+                <h3 className="text-lg font-bold text-gray-900">{periodoInfo.mesActivo}</h3>
                 <p className="text-sm text-gray-500">
                   {((julioReportGC?.versiones.length > 0 ? 1 : 0) + (julioReportGF?.versiones.length > 0 ? 1 : 0))} archivo(s) adjunto(s) en este período
                 </p>
@@ -297,7 +304,7 @@ export default function MisInformes() {
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedPeriod('Julio 2026');
+                            setSelectedPeriod(periodoInfo.mesActivo);
                             setSelectedType(type);
                             setStep(3);
                             setIsModalOpen(true);
@@ -476,7 +483,7 @@ export default function MisInformes() {
                       className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#407754] focus:border-transparent bg-white shadow-sm appearance-none"
                     >
                       <option value="" disabled>Elige un período...</option>
-                      <option value="Julio 2026">Julio 2026</option>
+                      <option value={periodoInfo.mesActivo}>{periodoInfo.mesActivo}</option>
                       <option value="Junio 2026">Junio 2026</option>
                       <option value="Mayo 2026">Mayo 2026</option>
                     </select>
@@ -644,6 +651,6 @@ export default function MisInformes() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

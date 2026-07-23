@@ -15,15 +15,18 @@ import {
   FiArrowLeft
 } from 'react-icons/fi';
 import { getInformes, addVersion, updateEstadoInforme } from '../../services/informesService';
+import { usePeriodo } from '../../components/PeriodoContext';
+import PageContainer from '../../components/PageContainer';
 
 export default function PeriodoActual() {
+  const { periodoInfo } = usePeriodo();
   const [informesState, setInformesState] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [step, setStep] = useState(1);
   const fileInputRef = React.useRef(null);
   
   // Modal state
-  const [selectedPeriod, setSelectedPeriod] = useState('Julio 2026');
+  const [selectedPeriod, setSelectedPeriod] = useState(periodoInfo.mesActivo);
   const [selectedType, setSelectedType] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -36,14 +39,18 @@ export default function PeriodoActual() {
   }, []);
 
   useEffect(() => {
+    setSelectedPeriod(periodoInfo.mesActivo);
+  }, [periodoInfo.mesActivo]);
+
+  useEffect(() => {
     if (location.state?.openModal && location.state?.reportType) {
       setSelectedType(location.state.reportType);
-      setSelectedPeriod('Julio 2026'); 
+      setSelectedPeriod(periodoInfo.mesActivo); 
       setStep(3); // Jump to upload step since period and type are predefined
       setIsModalOpen(true);
       window.history.replaceState({}, document.title);
     }
-  }, [location]);
+  }, [location, periodoInfo.mesActivo]);
 
   const [expandedVersions, setExpandedVersions] = useState({ GC: true, GF: true });
 
@@ -96,7 +103,7 @@ export default function PeriodoActual() {
       const sizeStr = (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB';
 
       // Wait for the service to persist the new version
-      await addVersion('Julio 2026', selectedType, 'inst-1', selectedFile.name, sizeStr);
+      await addVersion(periodoInfo.mesActivo, selectedType, 'inst-1', selectedFile.name, sizeStr);
 
       // Refresh local state from the service (single source of truth)
       const updated = await getInformes();
@@ -112,7 +119,7 @@ export default function PeriodoActual() {
 
   const openModal = () => {
     setSelectedType('');
-    setSelectedPeriod('Julio 2026');
+    setSelectedPeriod(periodoInfo.mesActivo);
     setStep(2); // Jump to choosing type
     setIsModalOpen(true);
   };
@@ -122,14 +129,14 @@ export default function PeriodoActual() {
   };
 
   const getJulioReport = (type) => {
-    return informesState.find(inf => inf.periodo === "Julio 2026" && inf.tipo === type);
+    return informesState.find(inf => inf.periodo === periodoInfo.mesActivo && inf.tipo === type);
   };
 
   const handleSimulateAction = async (type, action, comment = "") => {
     try {
       // Find the informe id to pass to updateEstadoInforme
       const informe = informesState.find(
-        inf => inf.periodo === 'Julio 2026' && inf.tipo === type
+        inf => inf.periodo === periodoInfo.mesActivo && inf.tipo === type
       );
       if (!informe) return;
 
@@ -144,7 +151,7 @@ export default function PeriodoActual() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto animate-in fade-in duration-500 relative">
+    <PageContainer maxWidth="max-w-6xl" className="relative">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -167,7 +174,7 @@ export default function PeriodoActual() {
         <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
           <div>
             <span className="bg-green-100 text-[#407754] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Período Activo</span>
-            <h2 className="text-xl font-black text-gray-900 mt-1.5 font-sans">Informe del Período — Julio 2026</h2>
+            <h2 className="text-xl font-black text-gray-900 mt-1.5 font-sans">Informe del Período — {periodoInfo.mesActivo}</h2>
           </div>
           <div className="text-xs text-gray-400 font-mono">STIMI Versioning Engine</div>
         </div>
@@ -374,7 +381,7 @@ export default function PeriodoActual() {
                       onChange={(e) => setSelectedPeriod(e.target.value)}
                       className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#407754] focus:border-transparent bg-white shadow-sm appearance-none"
                     >
-                      <option value="Julio 2026">Julio 2026 (Mes Actual)</option>
+                      <option value={periodoInfo.mesActivo}>{periodoInfo.mesActivo} (Mes Actual)</option>
                     </select>
                   </div>
                   <div className="flex justify-end gap-3 mt-8">
@@ -436,7 +443,7 @@ export default function PeriodoActual() {
                 <div className="space-y-5 animate-in slide-in-from-right-4 fade-in">
                   <div className="bg-gray-50 p-3 rounded-xl flex items-center justify-between border border-gray-100">
                     <div className="text-sm">
-                      <span className="text-gray-500">Período:</span> <strong className="text-gray-900">Julio 2026</strong>
+                      <span className="text-gray-500">Período:</span> <strong className="text-gray-900">{selectedPeriod}</strong>
                       <span className="mx-2 text-gray-300">|</span>
                       <span className="text-gray-500">Tipo:</span> <strong className="text-gray-900">Informe {selectedType}</strong>
                     </div>
@@ -523,7 +530,7 @@ export default function PeriodoActual() {
                   </div>
                   <h3 className="text-xl font-extrabold text-gray-900 mb-2">¡Archivo cargado exitosamente!</h3>
                   <p className="text-sm text-gray-600 max-w-sm mx-auto">
-                    El informe <strong>{selectedType}</strong> se ha guardado como <span className="font-semibold text-amber-600">Borrador</span> en el período de <strong>Julio 2026</strong>.
+                    El informe <strong>{selectedType}</strong> se ha guardado como <span className="font-semibold text-amber-600">Borrador</span> en el período de <strong>{selectedPeriod}</strong>.
                   </p>
                   
                   <button 
@@ -539,6 +546,6 @@ export default function PeriodoActual() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -2,11 +2,17 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiCheckCircle, FiClock, FiTrendingUp, FiUnlock, FiAlertCircle, FiFolder, FiFileText, FiChevronRight, FiSettings, FiBell } from 'react-icons/fi';
 import logoSena from '../../assets/logo-sena.png';
+import PeriodoCard from '../../components/PeriodoCard';
+import StatCard from '../../components/StatCard';
+import { usePeriodo } from '../../components/PeriodoContext';
+import PageContainer from '../../components/PageContainer';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { periodoInfo } = usePeriodo();
+
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <PageContainer>
       
       {/* Header */}
       <div>
@@ -21,67 +27,33 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-8">
           
           {/* Active Period Banner */}
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-6 shadow-sm flex items-start sm:items-center gap-5 relative overflow-hidden">
-            {/* Background decoration */}
-            <div className="absolute -right-10 -top-10 text-green-100 opacity-50">
-              <FiUnlock className="w-48 h-48" />
-            </div>
-
-            <div className="bg-white p-3 rounded-full shadow-sm shrink-0 relative z-10">
-              <FiUnlock className="w-8 h-8 text-[#407754]" />
-            </div>
-            <div className="relative z-10 flex-1">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h2 className="text-lg font-bold text-gray-900">Sistema Habilitado para Carga de Informes</h2>
-                <span className="bg-[#407754] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">Activo</span>
-              </div>
-              <p className="text-gray-600 text-sm">
-                Período de carga: <strong className="text-gray-900">Julio 2026</strong> <span className="mx-2 text-gray-300">|</span> 
-                Fecha límite: <strong className="text-gray-900 text-red-600">31 de Julio de 2026</strong>
-              </p>
-              
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-lg border border-blue-200">
-                  Formato GTH-F-062 V10 (GC)
-                </span>
-                <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-lg border border-emerald-200">
-                  Formato GF (Gestión Financiera)
-                </span>
-              </div>
-              </div>
-            </div>
+          <PeriodoCard isEditable={false} />
 
           {/* Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-              <div className="bg-blue-50 p-3 rounded-xl text-blue-600">
-                <FiCheckCircle className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Informes Enviados</p>
-                <p className="text-2xl font-bold text-gray-900">0</p>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <StatCard
+              icon={FiCheckCircle}
+              title="Informes Enviados"
+              value="0"
+              iconBgClass="bg-blue-50"
+              iconColorClass="text-blue-600"
+            />
             
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-              <div className="bg-amber-50 p-3 rounded-xl text-amber-500">
-                <FiClock className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Pendientes (Julio)</p>
-                <p className="text-2xl font-bold text-gray-900">2</p>
-              </div>
-            </div>
+            <StatCard
+              icon={FiClock}
+              title={`Pendientes (${periodoInfo.mesActivo.split(' ')[0]})`}
+              value="2"
+              iconBgClass="bg-amber-50"
+              iconColorClass="text-amber-500"
+            />
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-              <div className="bg-indigo-50 p-3 rounded-xl text-indigo-600">
-                <FiTrendingUp className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Cumplimiento Anual</p>
-                <p className="text-2xl font-bold text-gray-900">100%</p>
-              </div>
-            </div>
+            <StatCard
+              icon={FiTrendingUp}
+              title="Cumplimiento Anual"
+              value="100%"
+              iconBgClass="bg-indigo-50"
+              iconColorClass="text-indigo-600"
+            />
           </div>
 
           {/* Report Status */}
@@ -229,6 +201,6 @@ export default function Dashboard() {
         </div>
       </footer>
 
-    </div>
+    </PageContainer>
   );
 }

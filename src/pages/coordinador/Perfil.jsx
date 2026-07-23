@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { FiUser, FiMail, FiCreditCard, FiHash, FiBriefcase, FiMapPin, FiLock } from 'react-icons/fi';
 import { toast } from 'sonner';
+import PageContainer from '../../components/PageContainer';
 
 export default function PerfilCoordinador() {
   const { user } = useAuth();
@@ -20,7 +21,7 @@ export default function PerfilCoordinador() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <PageContainer maxWidth="max-w-5xl">
       
       {/* Header */}
       <div>
@@ -135,6 +136,6 @@ export default function PerfilCoordinador() {
 
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

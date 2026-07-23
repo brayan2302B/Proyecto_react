@@ -25,6 +25,7 @@ import {
   FiBarChart2 
 } from 'react-icons/fi';
 import { toast } from 'sonner';
+import PageContainer from '../../components/PageContainer';
 
 export default function Reportes() {
   const [loading, setLoading] = useState(true);
@@ -84,7 +85,7 @@ export default function Reportes() {
   ];
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       
       {/* Header & Export Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -307,6 +308,6 @@ export default function Reportes() {
 
       </div>
 
-    </div>
+    </PageContainer>
   );
 }

@@ -1,251 +1,293 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  FiSettings, 
-  FiKey, 
-  FiLock, 
-  FiCpu, 
   FiBell, 
   FiCalendar, 
-  FiFileText, 
-  FiInfo 
+  FiKey, 
+  FiCpu, 
+  FiSettings,
+  FiInfo
 } from 'react-icons/fi';
 import { toast } from 'sonner';
+import { usePeriodo } from '../../components/PeriodoContext';
+import { useAuth } from '../../hooks/useAuth';
+import PageContainer from '../../components/PageContainer';
+import SettingsTabs from '../../components/SettingsTabs';
 
 export default function Configuracion() {
+  const { user } = useAuth();
+  const { periodoInfo, updatePeriodo } = usePeriodo();
+  
   const [activeTab, setActiveTab] = useState('general');
+  const [saving, setSaving] = useState(false);
 
-  // Form states
+  // Form states - Notifications
   const [notifPendientes, setNotifPendientes] = useState(true);
   const [notifNuevos, setNotifNuevos] = useState(true);
   const [notifAprobacion, setNotifAprobacion] = useState(false);
   const [notifCorreo, setNotifCorreo] = useState(true);
 
-  const [periodoActivo, setPeriodoActivo] = useState('Julio 2026');
-  const [fechaLimite, setFechaLimite] = useState('2026-08-05');
-  const [bloquearEnvios, setBloquearEnvios] = useState(false);
+  // Form states - Periodo
+  const [periodoActivo, setPeriodoActivo] = useState(periodoInfo.mesActivo);
+  const [fechaLimite, setFechaLimite] = useState(periodoInfo.fechaLimite.split('T')[0]);
+  const [bloquearEnvios, setBloquearEnvios] = useState(!periodoInfo.habilitado);
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    toast.success('Configuración guardada correctamente en el sistema');
+  // Sync state if context changes
+  useEffect(() => {
+    setPeriodoActivo(periodoInfo.mesActivo);
+    setFechaLimite(periodoInfo.fechaLimite.split('T')[0]);
+    setBloquearEnvios(!periodoInfo.habilitado);
+  }, [periodoInfo]);
+
+  const handleSave = () => {
+    setSaving(true);
+    setTimeout(() => {
+      updatePeriodo({
+        mesActivo: periodoActivo,
+        fechaLimite: `${fechaLimite}T23:59:00`,
+        habilitado: !bloquearEnvios
+      });
+      setSaving(false);
+      toast.success('Configuración de coordinación guardada correctamente');
+    }, 800);
   };
 
   const handleCancel = () => {
+    setPeriodoActivo(periodoInfo.mesActivo);
+    setFechaLimite(periodoInfo.fechaLimite.split('T')[0]);
+    setBloquearEnvios(!periodoInfo.habilitado);
+    setNotifPendientes(true);
+    setNotifNuevos(true);
+    setNotifAprobacion(false);
+    setNotifCorreo(true);
     toast.info('Se han descartado los cambios en la configuración');
   };
 
-  const tabs = [
-    { id: 'general', label: 'General', icon: FiSettings },
-    { id: 'firma', label: 'Firma Digital', icon: FiKey },
-    { id: 'seguridad', label: 'Seguridad', icon: FiLock },
-    { id: 'sistema', label: 'Sistema', icon: FiCpu }
-  ];
+  // Switch wrapper component for clean render
+  const SwitchItem = ({ label, desc, checked, onChange }) => (
+    <div className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+      <div className="space-y-0.5">
+        <span className="text-xs font-bold text-gray-700 block">{label}</span>
+        <span className="text-[10px] text-gray-400 block leading-tight">{desc}</span>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#407754] focus:ring-offset-2 cursor-pointer ${
+          checked ? 'bg-[#407754]' : 'bg-gray-200'
+        }`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform duration-200 ease-in-out ${
+            checked ? 'translate-x-5' : 'translate-x-0'
+          }`}
+        />
+      </button>
+    </div>
+  );
 
-  return (
-    <div className="space-y-6">
-      
-      {/* Title */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">Configuración del Sistema</h2>
-        <p className="text-sm text-gray-500">Gestione los parámetros generales de STIMI, plazos de entrega y notificaciones</p>
+  const renderGeneralTab = () => (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Notifications Card */}
+      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-4">
+          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+            <FiBell className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Alertas y Notificaciones</h3>
+            <p className="text-xs text-gray-400">Parámetros generales de alerta del panel</p>
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <SwitchItem 
+            label="Informes pendientes de revisión"
+            desc="Alertar semanalmente sobre reportes de instructores sin validar"
+            checked={notifPendientes}
+            onChange={setNotifPendientes}
+          />
+          <SwitchItem 
+            label="Nuevos informes recibidos"
+            desc="Notificar instantáneamente cuando un instructor realice un envío"
+            checked={notifNuevos}
+            onChange={setNotifNuevos}
+          />
+          <SwitchItem 
+            label="Usuarios pendientes de aprobación"
+            desc="Notificar sobre nuevas solicitudes de registro en la plataforma"
+            checked={notifAprobacion}
+            onChange={setNotifAprobacion}
+          />
+          <SwitchItem 
+            label="Notificaciones por correo electrónico"
+            desc="Enviar una copia de las alertas del sistema al correo institucional"
+            checked={notifCorreo}
+            onChange={setNotifCorreo}
+          />
+        </div>
       </div>
 
-      {/* Tabs Menu */}
-      <div className="border-b border-gray-150 flex gap-4 overflow-x-auto pb-px">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 pb-3 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
-                isActive 
-                  ? 'border-sena-green text-sena-green' 
-                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'
-              }`}
+      {/* Períodos de Carga Card */}
+      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
+          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+            <FiCalendar className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Períodos de Carga y Plazos de Entrega</h3>
+            <p className="text-xs text-gray-400">Configuración del mes activo y fechas límite de carga de informes</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase">Mes Activo de Presentación</label>
+            <select
+              value={periodoActivo}
+              onChange={(e) => setPeriodoActivo(e.target.value)}
+              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white transition-all cursor-pointer"
             >
-              <Icon className="w-4 h-4" /> {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab Contents */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-        <form onSubmit={handleSave} className="space-y-6">
-          
-          {activeTab === 'general' && (
-            <div className="space-y-6">
-              
-              {/* Notificaciones Section */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 border-b border-gray-50 pb-2">
-                  <FiBell className="text-sena-green" /> Alertas y Notificaciones en Tiempo Real
-                </h3>
-                
-                <div className="space-y-3">
-                  <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
-                    <div className="space-y-0.5">
-                      <span className="text-xs font-bold text-gray-700 block">Informes pendientes de revisión</span>
-                      <span className="text-[10px] text-gray-400 block">Alertar semanalmente sobre reportes de instructores sin validar</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notifPendientes}
-                      onChange={(e) => setNotifPendientes(e.target.checked)}
-                      className="w-4 h-4 text-sena-green bg-gray-100 border-gray-300 rounded focus:ring-sena-green focus:ring-2"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
-                    <div className="space-y-0.5">
-                      <span className="text-xs font-bold text-gray-700 block">Nuevos informes recibidos</span>
-                      <span className="text-[10px] text-gray-400 block">Notificar instantáneamente cuando un instructor realice un envío</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notifNuevos}
-                      onChange={(e) => setNotifNuevos(e.target.checked)}
-                      className="w-4 h-4 text-sena-green bg-gray-100 border-gray-300 rounded focus:ring-sena-green focus:ring-2"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
-                    <div className="space-y-0.5">
-                      <span className="text-xs font-bold text-gray-700 block">Usuarios pendientes de aprobación</span>
-                      <span className="text-[10px] text-gray-400 block">Notificar sobre nuevas solicitudes de registro en la plataforma</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notifAprobacion}
-                      onChange={(e) => setNotifAprobacion(e.target.checked)}
-                      className="w-4 h-4 text-sena-green bg-gray-100 border-gray-300 rounded focus:ring-sena-green focus:ring-2"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
-                    <div className="space-y-0.5">
-                      <span className="text-xs font-bold text-gray-700 block">Notificaciones por correo electrónico</span>
-                      <span className="text-[10px] text-gray-400 block">Enviar una copia de las alertas del sistema al correo institucional</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notifCorreo}
-                      onChange={(e) => setNotifCorreo(e.target.checked)}
-                      className="w-4 h-4 text-sena-green bg-gray-100 border-gray-300 rounded focus:ring-sena-green focus:ring-2"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* Períodos de Carga Section */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 border-b border-gray-50 pb-2">
-                  <FiCalendar className="text-sena-green" /> Períodos de Carga y Plazos de Entrega
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Mes Activo de Presentación</label>
-                    <select
-                      value={periodoActivo}
-                      onChange={(e) => setPeriodoActivo(e.target.value)}
-                      className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
-                    >
-                      <option value="Julio 2026">Julio 2026</option>
-                      <option value="Agosto 2026">Agosto 2026</option>
-                      <option value="Septiembre 2026">Septiembre 2026</option>
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Fecha Límite Ordinaria</label>
-                    <input
-                      type="date"
-                      value={fechaLimite}
-                      onChange={(e) => setFechaLimite(e.target.value)}
-                      className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-1.5 justify-center pt-4 md:pt-0">
-                    <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={bloquearEnvios}
-                        onChange={(e) => setBloquearEnvios(e.target.checked)}
-                        className="w-4 h-4 text-sena-green bg-gray-100 border-gray-300 rounded focus:ring-sena-green focus:ring-2"
-                      />
-                      Bloquear envíos extemporáneos
-                    </label>
-                    <span className="text-[9px] text-gray-400 block pl-6">Impide el envío una vez superada la fecha límite ordinaria</span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          )}
-
-          {activeTab === 'firma' && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 border-b border-gray-50 pb-2">
-                <FiKey className="text-sena-green" /> Parámetros de Firma Digital y Cifrado
-              </h3>
-              <p className="text-xs text-gray-500 max-w-2xl">
-                Configure las llaves de seguridad GPG o firma digital automatizada en PDF para el aval final de las carpetas mensuales.
-              </p>
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex gap-3 text-amber-800 max-w-2xl">
-                <FiInfo className="w-5 h-5 flex-shrink-0" />
-                <div className="space-y-0.5">
-                  <p className="text-xs font-bold">Módulo en modo Demostración</p>
-                  <p className="text-[10px] text-amber-700">El gestor de firmas digitales utiliza firmas autocertificadas por defecto. Puede integrar firmas digitales registradas de la ONAC en producción.</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'seguridad' && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 border-b border-gray-50 pb-2">
-                <FiLock className="text-sena-green" /> Políticas de Seguridad e Inactividad
-              </h3>
-              <p className="text-xs text-gray-500">
-                Ajuste la expiración de las sesiones de los instructores y las restricciones de contraseñas de seguridad.
-              </p>
-            </div>
-          )}
-
-          {activeTab === 'sistema' && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2 border-b border-gray-50 pb-2">
-                <FiCpu className="text-sena-green" /> Configuración Interna de Servidores y API
-              </h3>
-              <p className="text-xs text-gray-500">
-                Monitoree el estado del backend simulado y los límites de tamaño máximo para cargas de archivos PDF (por defecto 15MB).
-              </p>
-            </div>
-          )}
-
-          {/* Form Actions footer */}
-          <div className="flex gap-3 justify-end border-t border-gray-100 pt-5">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-xl transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2.5 bg-sena-green hover:bg-sena-green-hover text-white text-xs font-bold rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-md shadow-sm"
-            >
-              Guardar configuración
-            </button>
+              <option value="Julio 2026">Julio 2026</option>
+              <option value="Agosto 2026">Agosto 2026</option>
+              <option value="Septiembre 2026">Septiembre 2026</option>
+              <option value="Octubre 2026">Octubre 2026</option>
+            </select>
           </div>
 
-        </form>
-      </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold text-gray-500 uppercase">Fecha Límite Ordinaria</label>
+            <input
+              type="date"
+              value={fechaLimite}
+              onChange={(e) => setFechaLimite(e.target.value)}
+              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white transition-all cursor-pointer"
+            />
+          </div>
 
+          <div className="flex flex-col gap-1 justify-center pt-2 md:pt-4">
+            <label className="flex items-center gap-2.5 text-xs font-bold text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={bloquearEnvios}
+                onChange={(e) => setBloquearEnvios(e.target.checked)}
+                className="w-4.5 h-4.5 text-[#407754] bg-white border-gray-300 rounded focus:ring-[#407754] focus:ring-2 cursor-pointer"
+              />
+              Bloquear envíos extemporáneos
+            </label>
+            <span className="text-[9px] text-gray-400 block pl-7">Impide el envío una vez superada la fecha límite ordinaria</span>
+          </div>
+        </div>
+      </div>
     </div>
+  );
+
+  const renderFirmaTab = () => (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
+          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+            <FiKey className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Parámetros de Firma Digital y Cifrado</h3>
+            <p className="text-xs text-gray-400">Llaves criptográficas de validación institucional</p>
+          </div>
+        </div>
+        
+        <p className="text-xs text-gray-500 max-w-2xl leading-relaxed mb-4">
+          Configure las llaves de seguridad GPG o firma digital automatizada en PDF para el aval final de las carpetas mensuales.
+        </p>
+        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3 text-amber-800 max-w-2xl shadow-sm">
+          <FiInfo className="w-5 h-5 flex-shrink-0 text-amber-600" />
+          <div className="space-y-0.5">
+            <p className="text-xs font-bold">Módulo en modo Demostración</p>
+            <p className="text-[10px] text-amber-700 leading-normal">
+              El gestor de firmas digitales utiliza firmas autocertificadas por defecto. Puede integrar firmas digitales registradas de la ONAC en producción.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderSistemaTab = () => {
+    const infoItems = [
+      { label: 'Versión del Sistema', value: 'v1.2.0' },
+      { label: 'Regional', value: 'Antioquia' },
+      { label: 'Centro de Formación', value: 'Centro de Servicios y Gestión Empresarial' },
+      { label: 'Sede Principal', value: 'Complejo Central' },
+      { label: 'Rol de Usuario', value: 'Coordinador Académico' },
+      { label: 'Última Actualización', value: '23 de Julio de 2026' }
+    ];
+
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        {/* Info Card */}
+        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
+            <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+              <FiCpu className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-gray-900">Información del Sistema</h3>
+              <p className="text-xs text-gray-400">Detalles de despliegue y ubicación del usuario</p>
+            </div>
+          </div>
+
+          <div className="space-y-3.5 max-w-xl">
+            {infoItems.map((item) => (
+              <div key={item.label} className="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
+                <span className="text-xs text-gray-500 font-semibold">{item.label}</span>
+                <span className="text-xs font-extrabold text-gray-800 text-right">{item.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Acerca de STIMI Card */}
+        <div className="bg-blue-50/70 border border-blue-100 rounded-3xl p-6 shadow-sm">
+          <h4 className="text-sm font-extrabold text-blue-900 mb-2">Acerca de STIMI</h4>
+          <p className="text-xs text-blue-800 leading-relaxed max-w-2xl mb-4">
+            STIMI (Sistema de Trazabilidad Mensual de Informes) es la plataforma oficial de seguimiento académico y contractual para instructores de la Regional Antioquia.
+          </p>
+          <div className="flex gap-2">
+            <span className="bg-[#407754] text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">GC - Gestión Contractual</span>
+            <span className="bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">GF - Gestión Financiera</span>
+          </div>
+        </div>
+
+        {/* Danger Zone Card */}
+        <div className="bg-red-50/50 border border-red-200 rounded-3xl p-6 shadow-sm">
+          <h4 className="text-sm font-extrabold text-red-700 mb-1">Zona de Peligro</h4>
+          <p className="text-[10px] text-gray-500 mb-4">Acciones irreversibles sobre los datos del sistema</p>
+          <button
+            type="button"
+            onClick={() => toast.warning('Esta acción destructiva simulada está deshabilitada temporalmente.')}
+            className="px-4 py-2 border border-red-300 hover:bg-red-50 text-red-600 text-xs font-bold rounded-xl transition-all cursor-pointer"
+          >
+            Reestablecer todos los períodos
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <PageContainer maxWidth="max-w-5xl">
+      <SettingsTabs
+        title="Configuración del Sistema"
+        subtitle="Personaliza el sistema de coordinación de SITMI"
+        saving={saving}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        renderGeneralTab={renderGeneralTab}
+        renderFirmaTab={renderFirmaTab}
+        renderSistemaTab={renderSistemaTab}
+      />
+    </PageContainer>
   );
 }
