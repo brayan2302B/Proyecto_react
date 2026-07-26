@@ -33,7 +33,7 @@ function RootRedirect() {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  return <Navigate to={`/${user.role}`} replace />;
+  return <Navigate to={`/${user.rol}`} replace />;
 }
 
 function App() {

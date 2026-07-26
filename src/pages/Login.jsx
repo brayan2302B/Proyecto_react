@@ -25,9 +25,11 @@ export default function Login() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!email) {
-      tempErrors.email = 'El correo electrónico es obligatorio';
-    } else if (!emailRegex.test(email)) {
+      tempErrors.email = 'El correo o documento es obligatorio';
+    } else if (email.includes('@') && !emailRegex.test(email)) {
       tempErrors.email = 'Formato de correo electrónico no válido';
+    } else if (!email.includes('@') && email.trim().length < 3) {
+      tempErrors.email = 'El documento debe tener al menos 3 caracteres';
     }
 
     if (!password) {
@@ -55,18 +57,19 @@ export default function Login() {
       const loggedUser = await login(email, password);
       toast.success(`¡Sesión iniciada! Bienvenido, ${loggedUser.nombreCompleto}`, { id: toastId });
       
-      // Redirect based on role
-      if (loggedUser.role === 'coordinador') {
+      // Redirect based on rol
+      if (loggedUser.rol === 'coordinador') {
         navigate('/coordinador');
       } else {
         navigate('/instructor');
       }
     } catch (err) {
-      toast.error(err.message || 'Correo o contraseña incorrectos', { id: toastId });
+      toast.error(err.message || 'Correo, documento o contraseña incorrectos', { id: toastId });
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div 
