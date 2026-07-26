@@ -12,7 +12,7 @@ export default function InstructorLayout() {
   const navigate = useNavigate();
 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [unreadCount, setUnreadCount] = useState(0);
   const bellFabRef = useRef(null);
 
   const navItems = [

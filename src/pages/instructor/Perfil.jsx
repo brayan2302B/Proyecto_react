@@ -14,11 +14,13 @@ import {
   FiAlertCircle
 } from 'react-icons/fi';
 import { useAuth } from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { toast } from 'sonner';
 
 export default function Perfil() {
   const { user, updateLocalUser } = useAuth();
+  const navigate = useNavigate();
   const [uploadingSignature, setUploadingSignature] = useState(false);
 
   const handleSignatureChange = async (e) => {
@@ -142,7 +144,10 @@ export default function Perfil() {
               <FiLock className="text-gray-400" /> Seguridad
             </h3>
             <p className="text-xs text-gray-500 mb-4">Puede cambiar su contraseña de acceso institucional cuando lo requiera.</p>
-            <button className="w-full py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-sm rounded-xl border border-gray-200 transition-colors">
+            <button
+              onClick={() => navigate('/instructor/configuracion', { state: { tab: 'seguridad' } })}
+              className="w-full py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold text-sm rounded-xl border border-gray-200 transition-colors"
+            >
               Cambiar Contraseña
             </button>
           </div>

@@ -1,23 +1,27 @@
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { FiUser, FiMail, FiCreditCard, FiHash, FiBriefcase, FiMapPin, FiLock } from 'react-icons/fi';
-import { toast } from 'sonner';
 import PageContainer from '../../components/PageContainer';
 
 export default function PerfilCoordinador() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
-  // Get data from authenticated session
-  const nombreCompleto = user?.nombreCompleto || 'Ana María González';
-  const email = user?.email || 'coordinador@sena.edu.co';
-  const documento = user?.documento || '52887643';
-  const centro = user?.centro || 'Centro de Servicios y Gestión Empresarial - Regional Antioquia';
-  const vinculacion = user?.vinculacion || 'Contratista - Desde Febrero 2024';
-  const area = 'Coordinación Académica';
-  const regional = 'Regional Antioquia';
+  // Get data from authenticated session — no hardcoded fallbacks that mask real data
+  const nombreCompleto = user?.nombreCompleto || '—';
+  const email = user?.email || user?.correo || '—';
+  const documento = user?.documento || user?.numero_documento || '—';
+  const tipoDocumento = user?.tipo_documento || 'CC';
+  const area = user?.area || 'Coordinación Académica';
 
-  const handleCambiarContrasena = () => {
-    toast.info('Funcionalidad de cambio de contraseña simulada');
+  const getTipoDocumentoLargo = (tipo = 'CC') => {
+    const map = {
+      CC: 'Cédula de Ciudadanía',
+      CE: 'Cédula de Extranjería',
+      TI: 'Tarjeta de Identidad',
+    };
+    return map[tipo] || tipo;
   };
 
   return (
@@ -38,7 +42,9 @@ export default function PerfilCoordinador() {
               <FiUser className="w-16 h-16" />
             </div>
             <h2 className="text-xl font-bold text-gray-900">{nombreCompleto}</h2>
-            <span className="mt-2 bg-green-100 text-green-800 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">COORDINADOR</span>
+            <span className="mt-2 bg-green-100 text-green-800 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">
+              {user?.rol || 'Coordinador'}
+            </span>
           </div>
 
           {/* Security */}
@@ -46,11 +52,12 @@ export default function PerfilCoordinador() {
             <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
               <FiLock className="text-gray-400" /> Seguridad
             </h3>
-            <p className="text-xs text-gray-500 mb-4">La última vez que cambiaste tu contraseña fue hace 3 meses.</p>
+            <p className="text-xs text-gray-500 mb-4">Puede cambiar su contraseña de acceso institucional cuando lo requiera.</p>
             <button 
-              onClick={handleCambiarContrasena}
-              className="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-sm rounded-xl transition-colors flex items-center justify-center gap-2"
+              onClick={() => navigate('/coordinador/configuracion', { state: { tab: 'seguridad' } })}
+              className="w-full py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold text-sm rounded-xl border border-gray-200 transition-colors flex items-center justify-center gap-2"
             >
+              <FiLock className="w-4 h-4" />
               Cambiar Contraseña
             </button>
           </div>
@@ -86,7 +93,7 @@ export default function PerfilCoordinador() {
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tipo de Documento</label>
                 <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
                   <FiCreditCard className="text-gray-400 shrink-0" />
-                  <span className="text-sm font-semibold text-gray-700 truncate">Cédula de Ciudadanía</span>
+                  <span className="text-sm font-semibold text-gray-700 truncate">{getTipoDocumentoLargo(tipoDocumento)}</span>
                 </div>
               </div>
 
@@ -109,7 +116,7 @@ export default function PerfilCoordinador() {
             <div className="p-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
               
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Área de formación / Dependencia</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Área de Formación / Dependencia</label>
                 <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
                   <FiBriefcase className="text-gray-400 shrink-0" />
                   <span className="text-sm font-semibold text-gray-700">{area}</span>
@@ -119,15 +126,15 @@ export default function PerfilCoordinador() {
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Centro / Sede</label>
                 <div className="flex flex-col justify-center bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-100 min-h-[46px]">
-                  <span className="text-sm font-semibold text-gray-700 leading-tight">{centro}</span>
+                  <span className="text-sm font-semibold text-gray-700 leading-tight">Centro de Gestión y Desarrollo Sostenible Surcolombiano</span>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Regional o ubicación</label>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Regional</label>
                 <div className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
                   <FiMapPin className="text-gray-400 shrink-0" />
-                  <span className="text-sm font-semibold text-gray-700">{regional}</span>
+                  <span className="text-sm font-semibold text-gray-700">Regional Huila</span>
                 </div>
               </div>
 

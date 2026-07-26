@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   FiBell, 
   FiCpu, 
@@ -11,7 +12,8 @@ import PageContainer from '../../components/PageContainer';
 import SettingsTabs from '../../components/SettingsTabs';
 
 export default function Configuracion() {
-  const [activeTab, setActiveTab] = useState('general');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'general');
   const [saving, setSaving] = useState(false);
 
   // Toggle states for notifications

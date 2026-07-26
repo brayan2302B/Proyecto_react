@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   FiBell, 
   FiCalendar, 
@@ -17,8 +18,9 @@ import FirmaDigitalManager from '../../components/FirmaDigitalManager';
 export default function Configuracion() {
   const { user } = useAuth();
   const { periodoInfo, updatePeriodo } = usePeriodo();
+  const location = useLocation();
   
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'general');
   const [saving, setSaving] = useState(false);
 
   // Form states - Notifications

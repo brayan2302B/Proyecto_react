@@ -16,8 +16,15 @@ import {
 import { getInformes, getHistorial, addVersion, descargarPdf } from '../../services/informesService';
 import { toast } from 'sonner';
 
+// Month names defined at module scope so they are accessible everywhere
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
 export default function MisInformes() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [periods, setPeriods] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [step, setStep] = useState(1);
@@ -32,20 +39,40 @@ export default function MisInformes() {
   const location = useLocation();
   const [expandedFolderId, setExpandedFolderId] = useState(null);
 
+  // Current period name computed once and stored at component level
+  const now = new Date();
+  const currentPeriodName = `${MESES[now.getMonth()]} ${now.getFullYear()}`;
+
   const loadReports = async () => {
     try {
       setLoading(true);
-      const [activeReports, historyReports] = await Promise.all([
-        getInformes(),
-        getHistorial()
-      ]);
+      setError(null);
+
+      // Fetch active and history reports separately so one failure doesn't block both
+      let activeReports = [];
+      let historyReports = [];
+
+      try {
+        activeReports = await getInformes();
+      } catch (e) {
+        console.warn('Error al cargar informes activos:', e);
+      }
+
+      try {
+        historyReports = await getHistorial();
+      } catch (e) {
+        console.warn('Error al cargar historial:', e);
+      }
 
       // Merge and filter duplicates by ID
-      const allReports = [...activeReports, ...historyReports];
+      const allReports = [
+        ...(Array.isArray(activeReports) ? activeReports : []),
+        ...(Array.isArray(historyReports) ? historyReports : [])
+      ];
       const uniqueReports = [];
       const seenIds = new Set();
       for (const r of allReports) {
-        if (r.id && !seenIds.has(r.id)) {
+        if (r?.id != null && !seenIds.has(r.id)) {
           seenIds.add(r.id);
           uniqueReports.push(r);
         }
@@ -54,17 +81,10 @@ export default function MisInformes() {
       // Group reports by period string (e.g. "Julio 2026")
       const groups = {};
 
-      // Seed the current month period if empty, so the folder is visible for upload
-      const months = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-      ];
-      const now = new Date();
-      const currentPeriodName = `${months[now.getMonth()]} ${now.getFullYear()}`;
-      
+      // Seed the current month period so the folder is always visible for upload
       groups[currentPeriodName] = {
         id: currentPeriodName,
-        month: months[now.getMonth()],
+        month: MESES[now.getMonth()],
         year: now.getFullYear().toString(),
         periodName: currentPeriodName,
         files: [],
@@ -73,7 +93,7 @@ export default function MisInformes() {
       };
 
       uniqueReports.forEach(rep => {
-        const periodKey = rep.periodo || currentPeriodName;
+        const periodKey = rep?.periodo || currentPeriodName;
         if (!groups[periodKey]) {
           const parts = periodKey.split(' ');
           groups[periodKey] = {
@@ -87,17 +107,17 @@ export default function MisInformes() {
           };
         }
 
-        const versions = rep.versiones || [];
+        const versions = Array.isArray(rep?.versiones) ? rep.versiones : [];
         const lastVersion = versions.length > 0 ? versions[versions.length - 1] : null;
 
         if (lastVersion) {
           groups[periodKey].files.push({
             id_informe: rep.id,
-            type: rep.tipo,
-            name: lastVersion.archivo,
-            size: lastVersion.size,
-            date: lastVersion.fecha,
-            status: lastVersion.estado
+            type: rep.tipo || '',
+            name: lastVersion.archivo || 'Sin nombre',
+            size: lastVersion.size || '0 MB',
+            date: lastVersion.fecha || '',
+            status: lastVersion.estado || 'Pendiente'
           });
 
           if (lastVersion.estado === 'Validado') {
@@ -110,9 +130,9 @@ export default function MisInformes() {
 
       // Sort periods by year & month index desc
       const getPeriodScore = (name) => {
-        const parts = name.split(' ');
+        const parts = (name || '').split(' ');
         if (parts.length < 2) return 0;
-        const mesIdx = months.map(m => m.toLowerCase()).indexOf(parts[0].toLowerCase());
+        const mesIdx = MESES.map(m => m.toLowerCase()).indexOf(parts[0].toLowerCase());
         const anio = parseInt(parts[1]) || 0;
         return anio * 12 + mesIdx;
       };
@@ -128,7 +148,8 @@ export default function MisInformes() {
         setExpandedFolderId(sortedPeriods[0].id);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error inesperado al cargar informes:', err);
+      setError('No se pudo cargar el historial. Intente de nuevo.');
       toast.error('Error al cargar la información de informes.');
     } finally {
       setLoading(false);
@@ -136,6 +157,7 @@ export default function MisInformes() {
   };
 
   // Load initial reports state
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadReports();
   }, []);
@@ -143,13 +165,6 @@ export default function MisInformes() {
   useEffect(() => {
     if (location.state?.openModal && location.state?.reportType) {
       setSelectedType(location.state.reportType);
-      
-      const months = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-      ];
-      const now = new Date();
-      const currentPeriodName = `${months[now.getMonth()]} ${now.getFullYear()}`;
       setSelectedPeriod(currentPeriodName); 
       setStep(3); // Jump to upload step
       setIsModalOpen(true);
@@ -242,8 +257,23 @@ export default function MisInformes() {
   if (loading && periods.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-        <div className="w-12 h-12 border-4 border-sena-green border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-[#407754] border-t-transparent rounded-full animate-spin"></div>
         <p className="text-gray-500 text-sm font-medium">Cargando historial de informes...</p>
+      </div>
+    );
+  }
+
+  if (error && periods.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 p-8">
+        <FiAlertCircle className="w-12 h-12 text-red-400" />
+        <p className="text-gray-700 font-semibold text-center">{error}</p>
+        <button
+          onClick={loadReports}
+          className="px-5 py-2 bg-[#407754] text-white text-sm font-bold rounded-xl hover:bg-[#346244] transition-colors"
+        >
+          Reintentar
+        </button>
       </div>
     );
   }
@@ -365,6 +395,7 @@ export default function MisInformes() {
                         );
                       } else {
                         // Placeholders to upload missing files in the current folder period
+                        // currentPeriodName is now defined at component level — no ReferenceError
                         const isCurrentMonth = folder.id === currentPeriodName;
                         return (
                           <div key={type} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300 opacity-75">

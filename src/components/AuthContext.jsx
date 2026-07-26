@@ -32,7 +32,7 @@ export function AuthProvider({ children }) {
         ? apiUser.area.nombre_area
         : apiUser.area;
 
-      // Construct user data object, mapping fields for backward compatibility
+      // Construct user data object, mapping all fields from the backend response
       const userData = {
         id_usuario: apiUser.id_usuario,
         email: apiUser.correo,
@@ -43,6 +43,7 @@ export function AuthProvider({ children }) {
         area: areaStr,
         documento: apiUser.numero_documento,
         tipo_documento: apiUser.tipo_documento,
+        numero_documento: apiUser.numero_documento,
         firma_digital_ruta: apiUser.firma_digital_ruta || '',
       };
 
@@ -71,11 +72,31 @@ export function AuthProvider({ children }) {
     localStorage.setItem('stimi_user', JSON.stringify(updatedUser));
   };
 
+  /**
+   * Cambiar contraseña del usuario autenticado.
+   * Llama a PATCH /auth/change-password con la contraseña actual y la nueva.
+   * Lanza un Error con el mensaje del backend si falla.
+   */
+  const changePassword = async (currentPassword, newPassword) => {
+    try {
+      const response = await api.patch('/auth/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        throw new Error(error.response.data.message || 'Error al actualizar la contraseña');
+      }
+      throw new Error('No se pudo conectar con el servidor.');
+    }
+  };
+
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, updateLocalUser }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, updateLocalUser, changePassword }}>
       {children}
     </AuthContext.Provider>
   );
-}
+}

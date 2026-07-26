@@ -15,7 +15,7 @@ const mapApiReportToUI = (apiReport: any) => {
     version: v.numero_version,
     archivo: v.archivo_nombre_original,
     size: v.archivo_tamano_bytes ? (v.archivo_tamano_bytes / (1024 * 1024)).toFixed(2) + ' MB' : '0.00 MB',
-    fecha: new Date(v.fecha_version).toLocaleString(),
+    fecha: v.fecha_version ? new Date(v.fecha_version).toLocaleString() : '',
     estado: capitalizeStatus(v.estado),
     observacion: v.observacion || '',
     comentarios: v.observacion || '',
@@ -29,8 +29,11 @@ const mapApiReportToUI = (apiReport: any) => {
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
-  const mesNombre = apiReport.periodo ? mesesNombres[apiReport.periodo.mes - 1] : 'Desconocido';
-  const periodoStr = apiReport.periodo ? `${mesNombre} ${apiReport.periodo.anio}` : '';
+
+  // Guard: periodo can be null if the report is orphaned
+  const periodo = apiReport.periodo ?? null;
+  const mesNombre = periodo ? (mesesNombres[periodo.mes - 1] ?? 'Desconocido') : 'Desconocido';
+  const periodoStr = periodo ? `${mesNombre} ${periodo.anio}` : '';
 
   const lastVer = versionsMapped.length > 0 ? versionsMapped[versionsMapped.length - 1] : null;
 
@@ -49,6 +52,7 @@ const mapApiReportToUI = (apiReport: any) => {
     versiones: versionsMapped
   };
 };
+
 
 export const getInformes = async (): Promise<any[]> => {
   const response = await api.get<any[]>('/informes');
