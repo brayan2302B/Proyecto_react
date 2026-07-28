@@ -12,16 +12,14 @@ import {
   FiMail, 
   FiShield, 
   FiGrid,
-  FiCalendar,
-  FiCheck,
-  FiX
+  FiAlertCircle
 } from 'react-icons/fi';
 import { toast } from 'sonner';
-import PageContainer from '../../components/PageContainer';
 
 export default function GestionUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
-  const [pendientes, setPendientes] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -32,41 +30,51 @@ export default function GestionUsuarios() {
     nombre: '',
     email: '',
     rol: 'instructor',
+    id_rol: '',
     documento: '',
-    area: '',
-    fichasInput: ''
+    id_area: '',
+    estado_cuenta: 'pendiente',
+    motivo_rechazo: '',
+    contrasena: ''
   });
   const [saving, setSaving] = useState(false);
 
-  const loadUsers = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const [data, dataPendientes] = await Promise.all([
+      const [usersData, rolesData, areasData] = await Promise.all([
         usuariosService.getUsuarios(),
-        usuariosService.getSolicitudesPendientes()
+        usuariosService.getRoles(),
+        usuariosService.getAreas()
       ]);
-      setUsuarios(data);
-      setPendientes(dataPendientes);
+      setUsuarios(usersData);
+      setRoles(rolesData);
+      setAreas(areasData);
     } catch (err) {
-      toast.error('Error al cargar la lista de usuarios');
+      toast.error('Error al cargar la información del servidor');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadUsers();
+    loadData();
   }, []);
 
   const handleOpenCreateModal = () => {
+    // Default to instructor rol if available
+    const defaultRol = roles.find(r => r.nombre_rol === 'instructor');
     setEditingUser(null);
     setFormData({
       nombre: '',
       email: '',
       rol: 'instructor',
+      id_rol: defaultRol ? defaultRol.id_rol.toString() : '',
       documento: '',
-      area: '',
-      fichasInput: ''
+      id_area: '',
+      estado_cuenta: 'pendiente',
+      motivo_rechazo: '',
+      contrasena: ''
     });
     setIsModalOpen(true);
   };
@@ -77,9 +85,12 @@ export default function GestionUsuarios() {
       nombre: usuario.nombre,
       email: usuario.email,
       rol: usuario.rol,
+      id_rol: usuario.id_rol ? usuario.id_rol.toString() : '',
       documento: usuario.documento,
-      area: usuario.area || '',
-      fichasInput: usuario.fichas ? usuario.fichas.join(', ') : ''
+      id_area: usuario.id_area ? usuario.id_area.toString() : '',
+      estado_cuenta: usuario.estado_cuenta || 'pendiente',
+      motivo_rechazo: usuario.motivo_rechazo || '',
+      contrasena: ''
     });
     setIsModalOpen(true);
   };
@@ -87,8 +98,8 @@ export default function GestionUsuarios() {
   const handleToggleEstado = async (id, nombre) => {
     try {
       const updated = await usuariosService.toggleEstadoUsuario(id);
-      toast.success(`Estado de ${nombre} cambiado a ${updated.estado}`);
-      await loadUsers();
+      toast.success(`Estado de ${nombre} cambiado a ${updated.estado === 'activo' ? 'Aprobado' : 'Pendiente'}`);
+      await loadData();
     } catch (err) {
       toast.error('No se pudo cambiar el estado del usuario');
     }
@@ -99,30 +110,9 @@ export default function GestionUsuarios() {
     try {
       await usuariosService.eliminarUsuario(id);
       toast.success(`Usuario ${nombre} eliminado del sistema`);
-      await loadUsers();
+      await loadData();
     } catch (err) {
       toast.error('No se pudo eliminar el usuario');
-    }
-  };
-
-  const handleAprobarSolicitud = async (id, nombre) => {
-    try {
-      await usuariosService.aprobarSolicitud(id);
-      toast.success(`Usuario ${nombre} aprobado y activado en el sistema`);
-      await loadUsers();
-    } catch (err) {
-      toast.error('No se pudo aprobar la solicitud');
-    }
-  };
-
-  const handleRechazarSolicitud = async (id, nombre) => {
-    if (!window.confirm(`¿Está seguro de rechazar la solicitud de registro de ${nombre}?`)) return;
-    try {
-      await usuariosService.rechazarSolicitud(id);
-      toast.success(`Solicitud de ${nombre} rechazada y eliminada`);
-      await loadUsers();
-    } catch (err) {
-      toast.error('No se pudo rechazar la solicitud');
     }
   };
 
@@ -134,50 +124,47 @@ export default function GestionUsuarios() {
     }
     setSaving(true);
 
-    const processedFichas = formData.fichasInput 
-      ? formData.fichasInput.split(',').map(f => f.trim()).filter(Boolean) 
-      : [];
-
     const payload = {
       nombre: formData.nombre,
       email: formData.email,
-      rol: formData.rol,
       documento: formData.documento,
-      area: formData.area,
-      fichas: processedFichas
+      id_rol: formData.id_rol ? parseInt(formData.id_rol) : undefined,
+      id_area: formData.id_area ? parseInt(formData.id_area) : undefined,
+      estado_cuenta: formData.estado_cuenta,
+      motivo_rechazo: formData.estado_cuenta === 'rechazado' ? formData.motivo_rechazo : ''
     };
+
+    if (formData.contrasena) {
+      payload.contrasena = formData.contrasena;
+    }
 
     try {
       if (editingUser) {
         await usuariosService.actualizarUsuario(editingUser.id, payload);
         toast.success('Usuario actualizado correctamente');
       } else {
+        // Find mapped role name for backward compatibility inside creations
+        const selectedRol = roles.find(r => r.id_rol.toString() === formData.id_rol);
+        payload.rol = selectedRol ? selectedRol.nombre_rol : 'instructor';
         await usuariosService.crearUsuario(payload);
         toast.success('Usuario registrado con éxito');
       }
       setIsModalOpen(false);
-      await loadUsers();
+      await loadData();
     } catch (err) {
-      toast.error('Error al guardar datos del usuario');
+      console.error(err);
+      const errMsg = err.response?.data?.message || 'Error al guardar datos';
+      toast.error(`Error: ${errMsg}`);
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-        <div className="w-12 h-12 border-4 border-sena-green border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-500 text-sm">Cargando gestión de usuarios...</p>
-      </div>
-    );
-  }
-
   // Metrics
   const totalUsuarios = usuarios.length;
   const totalInstructores = usuarios.filter(u => u.rol === 'instructor').length;
   const totalCoordinadores = usuarios.filter(u => u.rol === 'coordinador').length;
-  const totalActivos = usuarios.filter(u => u.estado === 'activo').length;
+  const totalActivos = usuarios.filter(u => u.estado_cuenta === 'aprobado').length;
 
   // Filtered list by query
   const filteredUsuarios = usuarios.filter((u) => {
@@ -190,7 +177,7 @@ export default function GestionUsuarios() {
   });
 
   return (
-    <PageContainer>
+    <div className="space-y-6">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -240,7 +227,7 @@ export default function GestionUsuarios() {
 
         <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-gray-400 block uppercase">Activos</span>
+            <span className="text-xs font-semibold text-gray-400 block uppercase">Activos (Aprobados)</span>
             <span className="text-2xl font-extrabold text-gray-850 mt-1">{totalActivos}</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500">
@@ -264,7 +251,9 @@ export default function GestionUsuarios() {
       {/* Users List */}
       <div className="space-y-4">
         {filteredUsuarios.map((u) => {
-          const isAct = u.estado === 'activo';
+          const isAct = u.estado_cuenta === 'aprobado';
+          const isRech = u.estado_cuenta === 'rechazado';
+          const isPend = u.estado_cuenta === 'pendiente';
           const isCoord = u.rol === 'coordinador';
 
           return (
@@ -273,7 +262,7 @@ export default function GestionUsuarios() {
               className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4 hover:shadow-md transition-shadow"
             >
               <div className="space-y-2 flex-1">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <h4 className="font-bold text-gray-800 text-base">{u.nombre}</h4>
                   
                   {/* Rol Badge */}
@@ -285,10 +274,18 @@ export default function GestionUsuarios() {
 
                   {/* Estado Badge */}
                   <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                    isAct ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
+                    isAct ? 'bg-green-100 text-green-700' :
+                    isRech ? 'bg-red-100 text-red-700' :
+                    'bg-amber-100 text-amber-700 animate-pulse'
                   }`}>
-                    {u.estado}
+                    {isAct ? 'Activo' : isRech ? 'Rechazado' : 'Pendiente'}
                   </span>
+
+                  {u.firma_digital_ruta && (
+                    <span className="text-[9px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                      Firma Registrada
+                    </span>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-1">
@@ -306,14 +303,13 @@ export default function GestionUsuarios() {
                   </div>
                 </div>
 
-                {!isCoord && u.fichas && u.fichas.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-1.5">
-                    <span className="text-[10px] text-gray-400 font-bold self-center">Fichas:</span>
-                    {u.fichas.map((f, i) => (
-                      <span key={i} className="text-[9px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">
-                        {f}
-                      </span>
-                    ))}
+                {isRech && u.motivo_rechazo && (
+                  <div className="mt-2 bg-red-50/50 border border-red-100 rounded-xl p-3 flex items-start gap-2 max-w-xl">
+                    <FiAlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-[10px] text-red-950 font-bold block">Motivo del rechazo:</span>
+                      <p className="text-xs text-red-800 mt-0.5 leading-relaxed">{u.motivo_rechazo}</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -327,13 +323,17 @@ export default function GestionUsuarios() {
                       ? 'bg-red-50 border-red-100 text-red-500 hover:bg-red-100' 
                       : 'bg-green-50 border-green-100 text-sena-green hover:bg-green-100'
                   }`}
-                  title={isAct ? 'Desactivar cuenta' : 'Activar cuenta'}
+                  title={isAct ? 'Suspender cuenta (Poner pendiente)' : 'Aprobar cuenta (Activar)'}
                 >
                   {isAct ? <FiXCircle className="w-4 h-4" /> : <FiCheckCircle className="w-4 h-4" />}
                 </button>
 
                 <button
-                  onClick={() => toast.info(`Detalles del Usuario:\nNombre: ${u.nombre}\nRol: ${u.rol}\nEstado: ${u.estado}`)}
+                  onClick={() => {
+                    let desc = `Detalles del Usuario:\nNombre: ${u.nombre}\nRol: ${u.rol}\nDocumento: ${u.documento}\nÁrea: ${u.area || 'Coordinación'}\nEstado: ${u.estado_cuenta.toUpperCase()}`;
+                    if (u.motivo_rechazo) desc += `\nMotivo de Rechazo: ${u.motivo_rechazo}`;
+                    toast.info(desc);
+                  }}
                   className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-100 transition-all"
                   title="Ver detalle"
                 >
@@ -343,7 +343,7 @@ export default function GestionUsuarios() {
                 <button
                   onClick={() => handleOpenEditModal(u)}
                   className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-100 transition-all"
-                  title="Editar usuario"
+                  title="Aprobar / Configurar Usuario"
                 >
                   <FiEdit className="w-4 h-4" />
                 </button>
@@ -361,92 +361,15 @@ export default function GestionUsuarios() {
         })}
       </div>
 
-      {/* Seccion de Usuarios Pendientes de Aprobacion */}
-      {pendientes.length > 0 && (
-        <div className="bg-red-50/30 border-2 border-red-200/60 rounded-3xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-red-800">Usuarios Pendientes de Aprobación</h3>
-                <span className="bg-red-500 text-white text-xs font-extrabold px-2 py-0.5 rounded-full">
-                  {pendientes.length}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500">Solicitudes de registro que requieren aprobación</p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {pendientes.map((p) => (
-              <div 
-                key={p.id}
-                className="bg-white border border-red-100 rounded-2xl p-4 flex flex-col md:flex-row justify-between md:items-center gap-4 hover:shadow-md transition-shadow"
-              >
-                <div className="space-y-1.5 flex-1">
-                  <div className="flex items-center gap-3">
-                    <h4 className="font-bold text-gray-800 text-sm">{p.nombre}</h4>
-                    <span className="text-[9px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                      {p.rol}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-0.5">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <FiMail className="text-gray-400 flex-shrink-0" />
-                      <span className="truncate">{p.email}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <FiGrid className="text-gray-400 flex-shrink-0" />
-                      <span>Doc: {p.documento}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <FiCalendar className="text-gray-400 flex-shrink-0" />
-                      <span>Registrado: {p.fechaRegistro}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2 border-t border-gray-50 pt-3 md:pt-0 md:border-t-0 justify-end">
-                  <button
-                    onClick={() => toast.info(`Detalles de Solicitud:\nNombre: ${p.nombre}\nRol: ${p.rol}\nÁrea: ${p.area || 'General'}\nFecha: ${p.fechaRegistro}`)}
-                    className="px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-100 text-xs font-semibold flex items-center gap-1 transition-all"
-                    title="Ver solicitud"
-                  >
-                    <FiEye className="w-3.5 h-3.5" /> Ver
-                  </button>
-
-                  <button
-                    onClick={() => handleAprobarSolicitud(p.id, p.nombre)}
-                    className="px-3 py-1.5 rounded-xl bg-green-50 hover:bg-green-100 text-sena-green border border-green-150 text-xs font-semibold flex items-center gap-1 transition-all"
-                    title="Aprobar solicitud"
-                  >
-                    <FiCheck className="w-3.5 h-3.5" /> Aprobar
-                  </button>
-
-                  <button
-                    onClick={() => handleRechazarSolicitud(p.id, p.nombre)}
-                    className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 text-xs font-semibold flex items-center gap-1 transition-all"
-                    title="Rechazar solicitud"
-                  >
-                    <FiX className="w-3.5 h-3.5" /> Rechazar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Create / Edit Modal Dialog */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 space-y-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 space-y-4 max-h-[90vh] overflow-y-auto">
             <div>
               <h3 className="text-lg font-bold text-gray-800">
-                {editingUser ? 'Modificar Registro de Usuario' : 'Registrar Nuevo Usuario'}
+                {editingUser ? 'Aprobación y Configuración de Usuario' : 'Registrar Nuevo Usuario'}
               </h3>
-              <p className="text-xs text-gray-500">Configure los accesos y área asociada del usuario</p>
+              <p className="text-xs text-gray-500">Configure los accesos, estado de cuenta y área del usuario</p>
             </div>
 
             <form onSubmit={handleSaveUsuario} className="space-y-3">
@@ -457,7 +380,7 @@ export default function GestionUsuarios() {
                   required
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  placeholder="Ej: Brayan Gómez"
+                  placeholder="Ej: Wilson Martínez"
                   className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
                 />
               </div>
@@ -489,35 +412,72 @@ export default function GestionUsuarios() {
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Rol *</label>
                   <select
-                    value={formData.rol}
-                    onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+                    value={formData.id_rol}
+                    onChange={(e) => setFormData({ ...formData, id_rol: e.target.value })}
                     className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
                   >
-                    <option value="instructor">Instructor</option>
-                    <option value="coordinador">Coordinador</option>
+                    <option value="">Seleccionar Rol</option>
+                    {roles.map(r => (
+                      <option key={r.id_rol} value={r.id_rol.toString()}>
+                        {r.nombre_rol === 'coordinador' ? 'Coordinador' : 'Instructor'}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-bold text-gray-400 uppercase">Área de Formación</label>
-                <input
-                  type="text"
-                  value={formData.area}
-                  onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  placeholder="Ej: Redes, Software, etc."
+                <select
+                  value={formData.id_area}
+                  onChange={(e) => setFormData({ ...formData, id_area: e.target.value })}
                   className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
-                />
+                >
+                  <option value="">Ninguna / Seleccionar Área</option>
+                  {areas.map(a => (
+                    <option key={a.id_area} value={a.id_area.toString()}>{a.nombre_area}</option>
+                  ))}
+                </select>
               </div>
 
-              {formData.rol === 'instructor' && (
+              {editingUser ? (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Estado de Cuenta</label>
+                    <select
+                      value={formData.estado_cuenta}
+                      onChange={(e) => setFormData({ ...formData, estado_cuenta: e.target.value })}
+                      className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
+                    >
+                      <option value="pendiente">Pendiente de aprobación</option>
+                      <option value="aprobado">Aprobado / Activo</option>
+                      <option value="rechazado">Rechazado</option>
+                    </select>
+                  </div>
+
+                  {formData.estado_cuenta === 'rechazado' && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase">Motivo de Rechazo *</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.motivo_rechazo}
+                        onChange={(e) => setFormData({ ...formData, motivo_rechazo: e.target.value })}
+                        placeholder="Ej: Cédula borrosa o documentación incompleta"
+                        className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-red-500 transition-all border-red-200 bg-red-50/10 text-red-900"
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Fichas Asociadas (Separadas por comas)</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Contraseña Temporal *</label>
                   <input
-                    type="text"
-                    value={formData.fichasInput}
-                    onChange={(e) => setFormData({ ...formData, fichasInput: e.target.value })}
-                    placeholder="Ej: 3145636, 3145637"
+                    type="password"
+                    required
+                    value={formData.contrasena}
+                    onChange={(e) => setFormData({ ...formData, contrasena: e.target.value })}
+                    placeholder="Contraseña inicial (min. 6 caracteres)"
                     className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
                   />
                 </div>
@@ -528,7 +488,7 @@ export default function GestionUsuarios() {
                   type="button"
                   disabled={saving}
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-655 text-xs font-semibold rounded-xl transition-all"
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-semibold rounded-xl transition-all"
                 >
                   Cancelar
                 </button>
@@ -537,7 +497,7 @@ export default function GestionUsuarios() {
                   disabled={saving}
                   className="px-4 py-2 bg-sena-green hover:bg-sena-green-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm"
                 >
-                  {saving ? 'Guardando...' : 'Guardar y Registrar'}
+                  {saving ? 'Guardando...' : editingUser ? 'Guardar y Aplicar' : 'Crear Usuario'}
                 </button>
               </div>
             </form>
@@ -545,6 +505,6 @@ export default function GestionUsuarios() {
         </div>
       )}
 
-    </PageContainer>
+    </div>
   );
 }

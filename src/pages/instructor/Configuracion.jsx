@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   FiBell, 
-  FiKey, 
   FiCpu, 
   FiSettings,
   FiGlobe,
@@ -12,7 +12,8 @@ import PageContainer from '../../components/PageContainer';
 import SettingsTabs from '../../components/SettingsTabs';
 
 export default function Configuracion() {
-  const [activeTab, setActiveTab] = useState('general');
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'general');
   const [saving, setSaving] = useState(false);
 
   // Toggle states for notifications
@@ -143,28 +144,7 @@ export default function Configuracion() {
     </div>
   );
 
-  const renderFirmaTab = () => (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
-          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
-            <FiKey className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-gray-900">Firma Digital</h3>
-            <p className="text-xs text-gray-400">Visualización de llaves de firma del instructor</p>
-          </div>
-        </div>
-        
-        <p className="text-xs text-gray-500 leading-relaxed mb-3">
-          Tus informes aprobados son validados por el coordinador mediante firma criptográfica.
-        </p>
-        <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 inline-block font-mono text-[10px] text-gray-600">
-          ID Llave GPG: CSGE-REGIONAL-ANTIOQUIA-INST-WILSON
-        </div>
-      </div>
-    </div>
-  );
+
 
   const renderSistemaTab = () => {
     const infoItems = [
@@ -238,7 +218,6 @@ export default function Configuracion() {
         onSave={handleSave}
         onCancel={handleCancel}
         renderGeneralTab={renderGeneralTab}
-        renderFirmaTab={renderFirmaTab}
         renderSistemaTab={renderSistemaTab}
       />
     </PageContainer>

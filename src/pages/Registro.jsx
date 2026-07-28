@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { FiInfo } from 'react-icons/fi';
+import api from '../services/api';
+import axios from 'axios';
 import fondoCampus from '../assets/Fondo.jpg.jpeg';
 import logoSena from '../assets/logo-sena.png';
 
@@ -58,7 +60,7 @@ export default function Registro() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validate()) {
@@ -69,15 +71,36 @@ export default function Registro() {
     setLoading(true);
     const toastId = toast.loading('Procesando registro...');
 
-    setTimeout(() => {
-      toast.success('Cuenta creada. Un coordinador debe activarla antes de que puedas iniciar sesión (simulado)', {
+    try {
+      const payload = {
+        nombreCompleto: formData.nombreCompleto,
+        email: formData.email,
+        tipoDocumento: formData.tipoDocumento,
+        numeroDocumento: formData.numeroDocumento,
+        contrasena: formData.password,
+        confirmarContrasena: formData.confirmPassword
+      };
+
+      const response = await api.post('/personas', payload);
+      
+      toast.success(response.data.message || 'Cuenta registrada. Un coordinador debe activarla antes de que puedas iniciar sesión.', {
         id: toastId,
-        duration: 4000
+        duration: 5000
       });
+      
       setTimeout(() => {
         navigate('/login');
-      }, 2500);
-    }, 1500);
+      }, 3000);
+    } catch (error) {
+      console.error('Error during registration:', error);
+      let errMsg = 'Ocurrió un error al procesar el registro.';
+      if (axios.isAxiosError(error) && error.response) {
+        errMsg = error.response.data.message || errMsg;
+      }
+      toast.error(errMsg, { id: toastId });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -178,7 +201,6 @@ export default function Registro() {
                 <option value="CC" className="bg-slate-900 text-white">Cédula de Ciudadanía</option>
                 <option value="CE" className="bg-slate-900 text-white">Cédula de Extranjería</option>
                 <option value="TI" className="bg-slate-900 text-white">Tarjeta de Identidad</option>
-                <option value="PAS" className="bg-slate-900 text-white">Pasaporte</option>
               </select>
             </div>
 

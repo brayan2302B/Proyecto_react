@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   FiBell, 
   FiCalendar, 
@@ -12,12 +13,14 @@ import { usePeriodo } from '../../components/PeriodoContext';
 import { useAuth } from '../../hooks/useAuth';
 import PageContainer from '../../components/PageContainer';
 import SettingsTabs from '../../components/SettingsTabs';
+import FirmaDigitalManager from '../../components/FirmaDigitalManager';
 
 export default function Configuracion() {
   const { user } = useAuth();
   const { periodoInfo, updatePeriodo } = usePeriodo();
+  const location = useLocation();
   
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'general');
   const [saving, setSaving] = useState(false);
 
   // Form states - Notifications
@@ -25,6 +28,7 @@ export default function Configuracion() {
   const [notifNuevos, setNotifNuevos] = useState(true);
   const [notifAprobacion, setNotifAprobacion] = useState(false);
   const [notifCorreo, setNotifCorreo] = useState(true);
+  const [firmaData, setFirmaData] = useState(null); // Estado para la firma final
 
   // Form states - Periodo
   const [periodoActivo, setPeriodoActivo] = useState(periodoInfo.mesActivo);
@@ -185,30 +189,11 @@ export default function Configuracion() {
 
   const renderFirmaTab = () => (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
-          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
-            <FiKey className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-gray-900">Parámetros de Firma Digital y Cifrado</h3>
-            <p className="text-xs text-gray-400">Llaves criptográficas de validación institucional</p>
-          </div>
-        </div>
-        
-        <p className="text-xs text-gray-500 max-w-2xl leading-relaxed mb-4">
-          Configure las llaves de seguridad GPG o firma digital automatizada en PDF para el aval final de las carpetas mensuales.
-        </p>
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex gap-3 text-amber-800 max-w-2xl shadow-sm">
-          <FiInfo className="w-5 h-5 flex-shrink-0 text-amber-600" />
-          <div className="space-y-0.5">
-            <p className="text-xs font-bold">Módulo en modo Demostración</p>
-            <p className="text-[10px] text-amber-700 leading-normal">
-              El gestor de firmas digitales utiliza firmas autocertificadas por defecto. Puede integrar firmas digitales registradas de la ONAC en producción.
-            </p>
-          </div>
-        </div>
-      </div>
+      <FirmaDigitalManager 
+        defaultName={user?.nombreCompleto} 
+        defaultRole="Coordinador Académico"
+        onFirmaSave={(data) => setFirmaData(data)}
+      />
     </div>
   );
 

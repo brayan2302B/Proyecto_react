@@ -13,71 +13,164 @@ import {
   FiEye, 
   FiAlertCircle
 } from 'react-icons/fi';
-import { getInformes, addVersion } from '../../services/informesService';
-import { usePeriodo } from '../../components/PeriodoContext';
-import PageContainer from '../../components/PageContainer';
+import { getInformes, getHistorial, addVersion, descargarPdf } from '../../services/informesService';
+import { toast } from 'sonner';
+
+// Month names defined at module scope so they are accessible everywhere
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
 
 export default function MisInformes() {
-  const { periodoInfo } = usePeriodo();
-  const [informesState, setInformesState] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [periods, setPeriods] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [step, setStep] = useState(1);
   const fileInputRef = useRef(null);
   
   // Modal state
-  const [selectedPeriod, setSelectedPeriod] = useState(periodoInfo.mesActivo);
+  const [selectedPeriod, setSelectedPeriod] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const [expandedFolderId, setExpandedFolderId] = useState(1); // default expand current month
-
   const location = useLocation();
+  const [expandedFolderId, setExpandedFolderId] = useState(null);
+
+  // Current period name computed once and stored at component level
+  const now = new Date();
+  const currentPeriodName = `${MESES[now.getMonth()]} ${now.getFullYear()}`;
+
+  const loadReports = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch active and history reports separately so one failure doesn't block both
+      let activeReports = [];
+      let historyReports = [];
+
+      try {
+        activeReports = await getInformes();
+      } catch (e) {
+        console.warn('Error al cargar informes activos:', e);
+      }
+
+      try {
+        historyReports = await getHistorial();
+      } catch (e) {
+        console.warn('Error al cargar historial:', e);
+      }
+
+      // Merge and filter duplicates by ID
+      const allReports = [
+        ...(Array.isArray(activeReports) ? activeReports : []),
+        ...(Array.isArray(historyReports) ? historyReports : [])
+      ];
+      const uniqueReports = [];
+      const seenIds = new Set();
+      for (const r of allReports) {
+        if (r?.id != null && !seenIds.has(r.id)) {
+          seenIds.add(r.id);
+          uniqueReports.push(r);
+        }
+      }
+
+      // Group reports by period string (e.g. "Julio 2026")
+      const groups = {};
+
+      // Seed the current month period so the folder is always visible for upload
+      groups[currentPeriodName] = {
+        id: currentPeriodName,
+        month: MESES[now.getMonth()],
+        year: now.getFullYear().toString(),
+        periodName: currentPeriodName,
+        files: [],
+        pending: 0,
+        validated: 0
+      };
+
+      uniqueReports.forEach(rep => {
+        const periodKey = rep?.periodo || currentPeriodName;
+        if (!groups[periodKey]) {
+          const parts = periodKey.split(' ');
+          groups[periodKey] = {
+            id: periodKey,
+            month: parts[0] || 'Desconocido',
+            year: parts[1] || '',
+            periodName: periodKey,
+            files: [],
+            pending: 0,
+            validated: 0
+          };
+        }
+
+        const versions = Array.isArray(rep?.versiones) ? rep.versiones : [];
+        const lastVersion = versions.length > 0 ? versions[versions.length - 1] : null;
+
+        if (lastVersion) {
+          groups[periodKey].files.push({
+            id_informe: rep.id,
+            type: rep.tipo || '',
+            name: lastVersion.archivo || 'Sin nombre',
+            size: lastVersion.size || '0 MB',
+            date: lastVersion.fecha || '',
+            status: lastVersion.estado || 'Pendiente'
+          });
+
+          if (lastVersion.estado === 'Validado') {
+            groups[periodKey].validated++;
+          } else {
+            groups[periodKey].pending++;
+          }
+        }
+      });
+
+      // Sort periods by year & month index desc
+      const getPeriodScore = (name) => {
+        const parts = (name || '').split(' ');
+        if (parts.length < 2) return 0;
+        const mesIdx = MESES.map(m => m.toLowerCase()).indexOf(parts[0].toLowerCase());
+        const anio = parseInt(parts[1]) || 0;
+        return anio * 12 + mesIdx;
+      };
+
+      const sortedPeriods = Object.values(groups).sort((a, b) => {
+        return getPeriodScore(b.periodName) - getPeriodScore(a.periodName);
+      });
+
+      setPeriods(sortedPeriods);
+
+      // Auto-expand the first folder if present
+      if (sortedPeriods.length > 0 && expandedFolderId === null) {
+        setExpandedFolderId(sortedPeriods[0].id);
+      }
+    } catch (err) {
+      console.error('Error inesperado al cargar informes:', err);
+      setError('No se pudo cargar el historial. Intente de nuevo.');
+      toast.error('Error al cargar la información de informes.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Load initial reports state
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    getInformes().then(data => setInformesState(data));
+    loadReports();
   }, []);
-
-  useEffect(() => {
-    setSelectedPeriod(periodoInfo.mesActivo);
-  }, [periodoInfo.mesActivo]);
 
   useEffect(() => {
     if (location.state?.openModal && location.state?.reportType) {
       setSelectedType(location.state.reportType);
-      setSelectedPeriod(periodoInfo.mesActivo); 
+      setSelectedPeriod(currentPeriodName); 
       setStep(3); // Jump to upload step
       setIsModalOpen(true);
       window.history.replaceState({}, document.title);
     }
-  }, [location, periodoInfo.mesActivo]);
-
-  // Mock data for static folders (Junio and Mayo)
-  const [folders, setFolders] = useState([
-    { 
-      id: 2, 
-      month: 'Junio', 
-      year: '2026', 
-      files: [
-        { type: 'GC', name: 'gc_junio_firmado.pdf', size: '1.2 MB', date: '30/06/2026, 05:30 PM', status: 'Validado' },
-        { type: 'GF', name: 'gf_junio_soportes.pdf', size: '3.4 MB', date: '30/06/2026, 05:45 PM', status: 'Validado' }
-      ], 
-      pending: 0, 
-      validated: 2 
-    },
-    { 
-      id: 3, 
-      month: 'Mayo', 
-      year: '2026', 
-      files: [
-        { type: 'GC', name: 'gc_mayo_firmado.pdf', size: '1.1 MB', date: '31/05/2026, 04:20 PM', status: 'Validado' },
-        { type: 'GF', name: 'gf_mayo_soportes.pdf', size: '2.8 MB', date: '31/05/2026, 04:30 PM', status: 'Validado' }
-      ], 
-      pending: 0, 
-      validated: 2 
-    },
-  ]);
+  }, [location]);
 
   const resetModal = () => {
     setIsModalOpen(false);
@@ -89,16 +182,15 @@ export default function MisInformes() {
       setIsUploading(false);
     }, 300);
   };
-
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       if (file.type !== 'application/pdf') {
-        alert('Solo se permiten archivos PDF.');
+        toast.error('Solo se permiten archivos PDF.');
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        alert('El archivo excede el límite de 10 MB.');
+        toast.error('El archivo excede el límite de 10 MB.');
         return;
       }
       setSelectedFile(file);
@@ -107,14 +199,14 @@ export default function MisInformes() {
 
   const handleDrop = (e) => {
     e.preventDefault();
-    const file = e.dataTransfer.files[0];
+    const file = e.dataTransfer.files?.[0];
     if (file) {
       if (file.type !== 'application/pdf') {
-        alert('Solo se permiten archivos PDF.');
+        toast.error('Solo se permiten archivos PDF.');
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        alert('El archivo excede el límite de 10 MB.');
+        toast.error('El archivo excede el límite de 10 MB.');
         return;
       }
       setSelectedFile(file);
@@ -125,21 +217,29 @@ export default function MisInformes() {
     if (!selectedFile) return;
 
     setIsUploading(true);
+    const toastId = toast.loading('Subiendo archivo al servidor...');
     try {
-      const sizeStr = (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB';
-
-      // Wait for the service to persist the new version
-      await addVersion(selectedPeriod, selectedType, 'inst-1', selectedFile.name, sizeStr);
-
-      // Refresh local state from the service (single source of truth)
-      const updated = await getInformes();
-      setInformesState(updated);
+      await addVersion(selectedPeriod, selectedType, 'inst-1', selectedFile);
+      toast.success('¡Archivo cargado con éxito!', { id: toastId });
+      await loadReports();
       setStep(4); // Success step
     } catch (err) {
       console.error('Error al subir informe:', err);
-      alert('Ocurrió un error al subir el informe. Intenta de nuevo.');
+      const errMsg = err.response?.data?.message || 'Error al conectar con el servidor';
+      toast.error(`No se pudo subir el informe: ${errMsg}`, { id: toastId });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDownloadFile = async (id, filename) => {
+    const toastId = toast.loading('Descargando archivo PDF...');
+    try {
+      await descargarPdf(id, filename);
+      toast.success('¡Descarga completada!', { id: toastId });
+    } catch (err) {
+      console.error('Error al descargar archivo:', err);
+      toast.error('No se pudo descargar el archivo del servidor.', { id: toastId });
     }
   };
 
@@ -154,40 +254,32 @@ export default function MisInformes() {
     setExpandedFolderId(prev => prev === id ? null : id);
   };
 
-  const getJulioReport = (type) => {
-    return informesState.find(inf => inf.periodo === periodoInfo.mesActivo && inf.tipo === type);
-  };
+  if (loading && periods.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+        <div className="w-12 h-12 border-4 border-[#407754] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-500 text-sm font-medium">Cargando historial de informes...</p>
+      </div>
+    );
+  }
 
-  const julioReportGC = getJulioReport('GC');
-  const julioReportGF = getJulioReport('GF');
-
-  const getJulioStatusCount = () => {
-    let pending = 0;
-    let validated = 0;
-    
-    if (julioReportGC && julioReportGC.versiones.length > 0) {
-      const last = julioReportGC.versiones[julioReportGC.versiones.length - 1];
-      if (last.estado === 'Validado') validated++;
-      else pending++;
-    } else {
-      pending++;
-    }
-
-    if (julioReportGF && julioReportGF.versiones.length > 0) {
-      const last = julioReportGF.versiones[julioReportGF.versiones.length - 1];
-      if (last.estado === 'Validado') validated++;
-      else pending++;
-    } else {
-      pending++;
-    }
-
-    return { pending, validated };
-  };
-
-  const julioCounts = getJulioStatusCount();
+  if (error && periods.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 p-8">
+        <FiAlertCircle className="w-12 h-12 text-red-400" />
+        <p className="text-gray-700 font-semibold text-center">{error}</p>
+        <button
+          onClick={loadReports}
+          className="px-5 py-2 bg-[#407754] text-white text-sm font-bold rounded-xl hover:bg-[#346244] transition-colors"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <PageContainer maxWidth="max-w-6xl" className="relative">
+    <div className="p-8 max-w-6xl mx-auto animate-in fade-in duration-500 relative">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -207,228 +299,141 @@ export default function MisInformes() {
 
       {/* Folders List */}
       <div className="space-y-4">
-        
-        {/* Dynamic Folder for Julio 2026 */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
-          <div 
-            onClick={() => toggleFolder(1)}
-            className="p-5 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none"
-          >
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-xl transition-colors ${expandedFolderId === 1 ? 'bg-[#407754] text-white' : 'bg-gray-50 text-gray-400 group-hover:text-[#407754] group-hover:bg-green-50'}`}>
-                <FiFolder className={`w-8 h-8 ${expandedFolderId === 1 ? 'fill-current opacity-40' : 'fill-current opacity-20'}`} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">{periodoInfo.mesActivo}</h3>
-                <p className="text-sm text-gray-500">
-                  {((julioReportGC?.versiones.length > 0 ? 1 : 0) + (julioReportGF?.versiones.length > 0 ? 1 : 0))} archivo(s) adjunto(s) en este período
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4 ml-14 sm:ml-0">
-              <div className="flex gap-2">
-                {julioCounts.pending > 0 && (
-                  <span className="bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-amber-200">
-                    {julioCounts.pending} pendiente(s)
-                  </span>
-                )}
-                {julioCounts.validated > 0 && (
-                  <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200">
-                    {julioCounts.validated} validado(s)
-                  </span>
-                )}
-              </div>
-              <div className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
-                {expandedFolderId === 1 ? (
-                  <FiChevronDown className="w-5 h-5 text-gray-500" />
-                ) : (
-                  <FiChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-all" />
-                )}
-              </div>
-            </div>
-          </div>
+        {periods.map(folder => {
+          const hasGC = folder.files.some(f => f.type === 'GC');
+          const hasGF = folder.files.some(f => f.type === 'GF');
 
-          {/* Folder Details (Julio 2026) */}
-          {expandedFolderId === 1 && (
-            <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-gray-50/50 animate-in slide-in-from-top-2 fade-in duration-200">
-              <div className="mt-2 space-y-3">
-                {['GC', 'GF'].map(type => {
-                  const rep = getJulioReport(type);
-                  const lastFile = rep && rep.versiones.length > 0 ? rep.versiones[rep.versiones.length - 1] : null;
-                  
-                  if (lastFile) {
-                    return (
-                      <div key={type} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm gap-4">
-                        <div className="flex items-center gap-4">
-                          <div className={`p-2 rounded-lg ${type === 'GC' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                            <FiFileText className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-sm font-bold text-gray-900">Informe {type} (V{lastFile.version})</h4>
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                                lastFile.estado === 'Validado' ? 'bg-emerald-100 text-emerald-800' :
-                                lastFile.estado === 'Devuelto' ? 'bg-red-100 text-red-800' :
-                                'bg-amber-100 text-amber-800'
-                              }`}>{lastFile.estado}</span>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px] sm:max-w-xs">{lastFile.archivo}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between sm:justify-end gap-6 ml-14 sm:ml-0">
-                          <div className="text-right">
-                            <p className="text-xs font-semibold text-gray-700">{lastFile.fecha}</p>
-                            <p className="text-xs text-gray-400">{lastFile.size || "1.5 MB"}</p>
-                          </div>
-                          <button className="text-gray-400 hover:text-[#407754] hover:bg-green-50 p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-semibold" title="Ver archivo">
-                            <FiEye className="w-5 h-5" />
-                            <span className="hidden sm:inline">Ver</span>
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <div key={type} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300 opacity-75">
-                        <div className="flex items-center gap-4">
-                          <div className="p-2 rounded-lg bg-gray-200 text-gray-400">
-                            <FiAlertCircle className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-bold text-gray-600">Informe {type}</h4>
-                            <p className="text-xs text-gray-500 mt-0.5">No cargado</p>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPeriod(periodoInfo.mesActivo);
-                            setSelectedType(type);
-                            setStep(3);
-                            setIsModalOpen(true);
-                          }}
-                          className="text-sm font-semibold text-blue-600 hover:underline flex items-center gap-1"
-                        >
-                          <FiUploadCloud className="w-4 h-4" /> Subir ahora
-                        </button>
-                      </div>
-                    );
-                  }
-                })}
+          return (
+            <div key={folder.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
+              {/* Folder Header (Clickable) */}
+              <div 
+                onClick={() => toggleFolder(folder.id)}
+                className="p-5 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none"
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-xl transition-colors ${expandedFolderId === folder.id ? 'bg-[#407754] text-white' : 'bg-gray-50 text-gray-400 group-hover:text-[#407754] group-hover:bg-green-50'}`}>
+                    <FiFolder className={`w-8 h-8 ${expandedFolderId === folder.id ? 'fill-current opacity-40' : 'fill-current opacity-20'}`} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">{folder.periodName}</h3>
+                    <p className="text-sm text-gray-500">{folder.files.length} archivo(s) adjunto(s) en este período</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 ml-14 sm:ml-0">
+                  <div className="flex gap-2 flex-wrap">
+                    {folder.pending > 0 && (
+                      <span className="bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-amber-200">
+                        {folder.pending} pendiente(s)
+                      </span>
+                    )}
+                    {folder.validated > 0 && (
+                      <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200">
+                        {folder.validated} validado(s)
+                      </span>
+                    )}
+                    {folder.files.length === 0 && (
+                      <span className="bg-gray-50 text-gray-400 text-xs font-bold px-2.5 py-1 rounded-lg border border-gray-200">
+                        Sin cargas
+                      </span>
+                    )}
+                  </div>
+                  <div className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                    {expandedFolderId === folder.id ? (
+                      <FiChevronDown className="w-5 h-5 text-gray-500" />
+                    ) : (
+                      <FiChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-all" />
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
 
-        {/* Existing Static Folders */}
-        {folders.map(folder => (
-          <div key={folder.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden">
-            {/* Folder Header (Clickable) */}
-            <div 
-              onClick={() => toggleFolder(folder.id)}
-              className="p-5 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none"
-            >
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-xl transition-colors ${expandedFolderId === folder.id ? 'bg-[#407754] text-white' : 'bg-gray-50 text-gray-400 group-hover:text-[#407754] group-hover:bg-green-50'}`}>
-                  <FiFolder className={`w-8 h-8 ${expandedFolderId === folder.id ? 'fill-current opacity-40' : 'fill-current opacity-20'}`} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900">{folder.month} {folder.year}</h3>
-                  <p className="text-sm text-gray-500">{folder.files.length} archivo(s) adjunto(s) en este período</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4 ml-14 sm:ml-0">
-                <div className="flex gap-2">
-                  {folder.pending > 0 && (
-                    <span className="bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-amber-200">
-                      {folder.pending} pendiente(s)
-                    </span>
-                  )}
-                  {folder.validated > 0 && (
-                    <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200">
-                      {folder.validated} validado(s)
-                    </span>
-                  )}
-                </div>
-                <div className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
-                  {expandedFolderId === folder.id ? (
-                    <FiChevronDown className="w-5 h-5 text-gray-500" />
-                  ) : (
-                    <FiChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-all" />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Folder Details (Expanded) */}
-            {expandedFolderId === folder.id && (
-              <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-gray-50/50 animate-in slide-in-from-top-2 fade-in duration-200">
-                <div className="mt-2 space-y-3">
-                  {['GC', 'GF'].map(type => {
-                    const file = folder.files.find(f => f.type === type);
-                    
-                    if (file) {
-                      return (
-                        <div key={type} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm gap-4">
-                          <div className="flex items-center gap-4">
-                            <div className={`p-2 rounded-lg ${type === 'GC' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                              <FiFileText className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-sm font-bold text-gray-900">Informe {type}</h4>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                                  file.status === 'Validado' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                                }`}>
-                                  {file.status}
-                                </span>
+              {/* Folder Details (Expanded) */}
+              {expandedFolderId === folder.id && (
+                <div className="px-5 pb-5 pt-2 border-t border-gray-100 bg-gray-50/50 animate-in slide-in-from-top-2 fade-in duration-200">
+                  <div className="mt-2 space-y-3">
+                    {['GC', 'GF'].map(type => {
+                      const file = folder.files.find(f => f.type === type);
+                      
+                      if (file) {
+                        return (
+                          <div key={type} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm gap-4">
+                            <div className="flex items-center gap-4">
+                              <div className={`p-2 rounded-lg ${type === 'GC' ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                <FiFileText className="w-6 h-6" />
                               </div>
-                              <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px] sm:max-w-xs">{file.name}</p>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-sm font-bold text-gray-900">Informe {type}</h4>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                    file.status === 'Validado' ? 'bg-emerald-100 text-emerald-800' :
+                                    file.status === 'Devuelto' ? 'bg-red-100 text-red-800' :
+                                    'bg-amber-100 text-amber-800'
+                                  }`}>
+                                    {file.status}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px] sm:max-w-xs">{file.name}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between sm:justify-end gap-6 ml-14 sm:ml-0">
+                              <div className="text-right">
+                                <p className="text-xs font-semibold text-gray-700">{file.date}</p>
+                                <p className="text-xs text-gray-400">{file.size}</p>
+                              </div>
+                              <button 
+                                onClick={() => handleDownloadFile(file.id_informe, file.name)}
+                                className="text-gray-400 hover:text-[#407754] hover:bg-green-50 p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-semibold cursor-pointer" 
+                                title="Descargar archivo PDF"
+                              >
+                                <FiEye className="w-5 h-5" />
+                                <span className="hidden sm:inline">Descargar</span>
+                              </button>
                             </div>
                           </div>
-                          
-                          <div className="flex items-center justify-between sm:justify-end gap-6 ml-14 sm:ml-0">
-                            <div className="text-right">
-                              <p className="text-xs font-semibold text-gray-700">{file.date}</p>
-                              <p className="text-xs text-gray-400">{file.size}</p>
+                        );
+                      } else {
+                        // Placeholders to upload missing files in the current folder period
+                        // currentPeriodName is now defined at component level — no ReferenceError
+                        const isCurrentMonth = folder.id === currentPeriodName;
+                        return (
+                          <div key={type} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300 opacity-75">
+                            <div className="flex items-center gap-4">
+                              <div className="p-2 rounded-lg bg-gray-200 text-gray-400">
+                                <FiAlertCircle className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-bold text-gray-600">Informe {type}</h4>
+                                <p className="text-xs text-gray-500 mt-0.5">No cargado</p>
+                              </div>
                             </div>
-                            <button className="text-gray-400 hover:text-[#407754] hover:bg-green-50 p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-semibold" title="Ver archivo">
-                              <FiEye className="w-5 h-5" />
-                              <span className="hidden sm:inline">Ver</span>
-                            </button>
+                            {isCurrentMonth ? (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedPeriod(folder.periodName);
+                                  setSelectedType(type);
+                                  setStep(3);
+                                  setIsModalOpen(true);
+                                }}
+                                className="text-sm font-semibold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                <FiUploadCloud className="w-4 h-4" /> Subir ahora
+                              </button>
+                            ) : (
+                              <span className="text-xs text-gray-400 font-semibold italic">Período Archivado</span>
+                            )}
                           </div>
-                        </div>
-                      );
-                    } else {
-                      return (
-                        <div key={type} className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300 opacity-75">
-                          <div className="flex items-center gap-4">
-                            <div className="p-2 rounded-lg bg-gray-200 text-gray-400">
-                              <FiAlertCircle className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-gray-600">Informe {type}</h4>
-                              <p className="text-xs text-gray-500 mt-0.5">No cargado</p>
-                            </div>
-                          </div>
-                          <button 
-                            disabled
-                            className="text-sm font-semibold text-gray-400 cursor-not-allowed flex items-center gap-1"
-                          >
-                            <FiUploadCloud className="w-4 h-4" /> Histórico
-                          </button>
-                        </div>
-                      );
-                    }
-                  })}
+                        );
+                      }
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Info Card */}
@@ -483,9 +488,9 @@ export default function MisInformes() {
                       className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#407754] focus:border-transparent bg-white shadow-sm appearance-none"
                     >
                       <option value="" disabled>Elige un período...</option>
-                      <option value={periodoInfo.mesActivo}>{periodoInfo.mesActivo}</option>
-                      <option value="Junio 2026">Junio 2026</option>
-                      <option value="Mayo 2026">Mayo 2026</option>
+                      {periods.map(p => (
+                        <option key={p.id} value={p.periodName}>{p.periodName}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="flex justify-end gap-3 mt-8">
@@ -651,6 +656,6 @@ export default function MisInformes() {
           </div>
         </div>
       )}
-    </PageContainer>
+    </div>
   );
 }

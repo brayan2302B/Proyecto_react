@@ -79,13 +79,18 @@ export default function RevisionInformes() {
 
   // Metrics
   const totalInstructoresCount = instructores.length;
-  const pendientesCount = informes.filter(i => i.estado === 'pendiente').length;
-  const validadosCount = informes.filter(i => i.estado === 'aprobado').length;
-  const rechazadosCount = informes.filter(i => i.estado === 'rechazado').length;
+  const pendientesCount = informes.filter(i => i.estado?.toLowerCase() === 'pendiente').length;
+  const validadosCount = informes.filter(i => i.estado?.toLowerCase() === 'validado' || i.estado?.toLowerCase() === 'aprobado').length;
+  const rechazadosCount = informes.filter(i => i.estado?.toLowerCase() === 'devuelto' || i.estado?.toLowerCase() === 'rechazado').length;
 
   // Filtered reports
   const filteredInformes = informes.filter((inf) => {
-    const matchEstado = filtroEstado === 'todos' ? true : inf.estado === filtroEstado;
+    const statusLower = inf.estado?.toLowerCase() || '';
+    const matchEstado = filtroEstado === 'todos' ? true : (
+      (filtroEstado === 'pendiente' && statusLower === 'pendiente') ||
+      (filtroEstado === 'aprobado' && (statusLower === 'validado' || statusLower === 'aprobado')) ||
+      (filtroEstado === 'rechazado' && (statusLower === 'devuelto' || statusLower === 'rechazado'))
+    );
     const matchTipo = filtroTipo === 'todos' ? true : inf.tipo === filtroTipo;
     return matchEstado && matchTipo;
   });
@@ -183,9 +188,10 @@ export default function RevisionInformes() {
           </div>
         ) : (
           filteredInformes.map((inf) => {
-            const isPend = inf.estado === 'pendiente';
-            const isAprob = inf.estado === 'aprobado';
-            const isRech = inf.estado === 'rechazado';
+            const statusLower = inf.estado?.toLowerCase() || '';
+            const isPend = statusLower === 'pendiente';
+            const isAprob = statusLower === 'validado' || statusLower === 'aprobado';
+            const isRech = statusLower === 'devuelto' || statusLower === 'rechazado';
 
             return (
               <div 
