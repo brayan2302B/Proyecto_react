@@ -18,8 +18,7 @@ export default function RecuperarContrasena() {
   const [loadingForgot, setLoadingForgot] = useState(false);
   const [errorForgot, setErrorForgot] = useState('');
 
-  // Step 2 state — devToken is shown only in dev mode
-  const [devToken, setDevToken] = useState('');
+  // Step 2 state
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -46,12 +45,7 @@ export default function RecuperarContrasena() {
       const response = await api.post('/auth/forgot-password', { email });
       toast.success('Solicitud procesada. Ingresa el token de recuperación.', { id: toastId });
 
-      // In development mode the backend returns the token directly
-      if (response.data.dev_token) {
-        setDevToken(response.data.dev_token);
-        setToken(response.data.dev_token); // Pre-fill for convenience
-        toast.info(`[DEV] Token: ${response.data.dev_token}`, { duration: 12000 });
-      }
+      // Token is delivered exclusively via email — no client-side exposure
 
       setStep(2);
     } catch (err) {
@@ -86,7 +80,7 @@ export default function RecuperarContrasena() {
     const toastId = toast.loading('Restableciendo contraseña...');
 
     try {
-      await api.post('/auth/reset-password', { token, newPassword });
+      await api.post('/auth/reset-password', { token: token.trim(), newPassword });
       toast.success('¡Contraseña restablecida correctamente! Ya puedes iniciar sesión.', { id: toastId });
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
@@ -179,12 +173,7 @@ export default function RecuperarContrasena() {
               Ingresa el token recibido y tu nueva contraseña.
             </p>
 
-            {devToken && (
-              <div className="mb-4 bg-yellow-400/20 border border-yellow-400/40 rounded-xl px-4 py-3 text-left">
-                <p className="text-[11px] font-bold text-yellow-300 uppercase mb-1">🔧 Modo Desarrollo — Token:</p>
-                <p className="text-xs font-mono text-white break-all">{devToken}</p>
-              </div>
-            )}
+
 
             <form onSubmit={handleReset} className="space-y-4 text-left" noValidate>
               <div className="space-y-1.5">
