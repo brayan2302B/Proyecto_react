@@ -1,14 +1,34 @@
 import api from './api';
 
 export const reportesService = {
-  getEstadisticasGenerales: async (): Promise<any> => {
+  getEstadisticasGenerales: async (params?: { instructorId?: string, mes?: string, area?: string }): Promise<any> => {
     const response = await api.get<any[]>('/informes');
-    const reports = response.data;
+    let reports = response.data;
+
+    if (params) {
+      if (params.instructorId && params.instructorId !== 'todos') {
+        reports = reports.filter(r => r.usuario?.id_usuario?.toString() === params.instructorId);
+      }
+      if (params.area && params.area !== 'todos') {
+        reports = reports.filter(r => {
+          const areaNombre = typeof r.usuario?.area === 'object' ? r.usuario.area.nombre_area : r.usuario?.area;
+          return areaNombre === params.area;
+        });
+      }
+      if (params.mes && params.mes !== 'todos') {
+        const mesesNombres = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        reports = reports.filter(r => {
+           if (!r.periodo) return false;
+           const reportMesStr = `${mesesNombres[r.periodo.mes - 1]} ${r.periodo.anio}`;
+           return reportMesStr === params.mes;
+        });
+      }
+    }
 
     const totalInformes = reports.length;
     const aprobados = reports.filter(r => r.estado === 'validado' || r.estado === 'aprobado').length;
     const rechazados = reports.filter(r => r.estado === 'devuelto' || r.estado === 'rechazado').length;
-    const pendientes = reports.filter(r => r.estado === 'pendiente').length;
+    const pendientes = totalInformes - aprobados - rechazados;
 
     const tasaCumplimiento = totalInformes > 0 ? Math.round((aprobados / totalInformes) * 100) : 100;
 
@@ -38,7 +58,7 @@ export const reportesService = {
         instructorsMap[instId].aprobados++;
       } else if (r.estado === 'devuelto' || r.estado === 'rechazado') {
         instructorsMap[instId].rechazados++;
-      } else if (r.estado === 'pendiente') {
+      } else {
         instructorsMap[instId].pendientes++;
       }
     });

@@ -34,14 +34,19 @@ export default function Reportes() {
 
   // Filter states
   const [selectedInst, setSelectedInst] = useState('todos');
-  const [selectedMes, setSelectedMes] = useState('Julio 2026');
+  const [selectedMes, setSelectedMes] = useState('todos');
   const [selectedArea, setSelectedArea] = useState('todos');
 
   const loadData = async () => {
     try {
       setLoading(true);
+      const params = {
+        instructorId: selectedInst,
+        mes: selectedMes,
+        area: selectedArea
+      };
       const [statsData, instList] = await Promise.all([
-        reportesService.getEstadisticasGenerales(),
+        reportesService.getEstadisticasGenerales(params),
         instructoresService.getInstructores()
       ]);
       setStats(statsData);
@@ -58,6 +63,7 @@ export default function Reportes() {
   }, []);
 
   const handleApplyFilters = () => {
+    loadData();
     toast.success('Filtros aplicados con éxito');
   };
 
@@ -130,6 +136,7 @@ export default function Reportes() {
               onChange={(e) => setSelectedMes(e.target.value)}
               className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
             >
+              <option value="todos">Todos los Meses</option>
               <option value="Julio 2026">Julio 2026</option>
               <option value="Junio 2026">Junio 2026</option>
               <option value="Mayo 2026">Mayo 2026</option>

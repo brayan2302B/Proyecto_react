@@ -37,6 +37,10 @@ const mapApiReportToUI = (apiReport: any) => {
 
   const lastVer = versionsMapped.length > 0 ? versionsMapped[versionsMapped.length - 1] : null;
 
+  const carpetaUrl = apiReport.usuario?.carpeta_drive_url 
+    ? apiReport.usuario.carpeta_drive_url 
+    : null;
+
   return {
     id: apiReport.id_informe,
     instructorId: apiReport.usuario?.id_usuario?.toString(),
@@ -49,7 +53,8 @@ const mapApiReportToUI = (apiReport: any) => {
     estado: capitalizeStatus(apiReport.estado),
     observacion: apiReport.observacion || '',
     comentarios: apiReport.observacion || '',
-    versiones: versionsMapped
+    versiones: versionsMapped,
+    carpetaUrl: carpetaUrl
   };
 };
 
