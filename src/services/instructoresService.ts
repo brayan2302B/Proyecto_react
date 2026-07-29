@@ -15,7 +15,7 @@ export const instructoresService = {
         estado: u.estado_cuenta === 'aprobado' ? 'activo' : 'inactivo',
         fichas: [], // Mocked layout array
         totalAprendices: 0,
-        carpetaRuta: `G-Drive/STIMI/Instructores/${u.nombre_completo.replace(/\s+/g, '_')}`,
+        carpetaRuta: u.carpeta_drive_url || '',
         informesPendientes: 0,
         ultimoReporte: u.firma_digital_ruta ? 'Firma cargada' : 'Sin firma'
       }));
@@ -34,7 +34,7 @@ export const instructoresService = {
       estado: u.estado_cuenta === 'aprobado' ? 'activo' : 'inactivo',
       fichas: [],
       totalAprendices: 0,
-      carpetaRuta: `G-Drive/STIMI/Instructores/${u.nombre_completo.replace(/\s+/g, '_')}`
+      carpetaRuta: u.carpeta_drive_url || ''
     };
   },
 

@@ -236,7 +236,11 @@ export default function RevisionInformes() {
                 <div className="flex items-center gap-3 self-end md:self-center">
                   <button
                     onClick={() => {
-                      toast.info(`Carpeta Drive simulada: G-Drive/STIMI/Instructores/${inf.instructorNombre.replace(/\s+/g, '_')}`);
+                      if (inf.carpetaUrl) {
+                        window.open(inf.carpetaUrl, '_blank');
+                      } else {
+                        toast.warn(`Este instructor aún no tiene carpeta de Drive asignada. Asígnela desde la gestión de usuarios.`);
+                      }
                     }}
                     className="px-3.5 py-2 bg-white hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-1.5 border border-gray-100 hover:-translate-y-0.5"
                   >
