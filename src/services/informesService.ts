@@ -170,9 +170,45 @@ export const descargarPdf = async (id: number, nombreArchivo: string): Promise<v
   link.parentNode?.removeChild(link);
 };
 
+export const verPdf = async (id: number): Promise<void> => {
+  console.log(`>>> [DEBUG-FRONTEND] verPdf llamado con id: ${id}`);
+  try {
+    const response = await api.get(`/informes/${id}/view`, {
+      responseType: 'blob',
+    });
+    console.log(`>>> [DEBUG-FRONTEND] verPdf respuesta recibida | status: ${response.status} | content-type: ${response.headers['content-type']} | size: ${response.data?.size}`);
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const newWindow = window.open(url, '_blank');
+    if (!newWindow) {
+      throw new Error('El navegador bloqueó la ventana emergente. Permite popups para este sitio.');
+    }
+  } catch (err: any) {
+    // When responseType is 'blob', error response data is a Blob — need to parse it
+    if (err?.response?.data instanceof Blob) {
+      console.log(`>>> [DEBUG-FRONTEND] verPdf error blob detectado, parseando...`);
+      const text = await err.response.data.text();
+      console.log(`>>> [DEBUG-FRONTEND] verPdf error body raw:`, text);
+      try {
+        const parsed = JSON.parse(text);
+        err.response.data = parsed; // Replace blob with parsed JSON for upstream handlers
+      } catch { /* Not JSON, leave as-is */ }
+    }
+    throw err;
+  }
+};
+
 export const getPdfGcJson = async (id: number): Promise<any> => {
   const response = await api.get(`/informes/${id}/pdf-gc`);
   return response.data;
+};
+
+export const descartarUltimaVersion = async (id: number): Promise<any> => {
+  const response = await api.delete(`/informes/${id}/version/last`);
+  if (!response.data || response.data.id_informe === null) {
+    return response.data;
+  }
+  return mapApiReportToUI(response.data);
 };
 
 export const informesService = {
@@ -184,5 +220,7 @@ export const informesService = {
   getDetalleReporte,
   updateEstadoInforme,
   descargarPdf,
-  getPdfGcJson
+  verPdf,
+  getPdfGcJson,
+  descartarUltimaVersion
 };

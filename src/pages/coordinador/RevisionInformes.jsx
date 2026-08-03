@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { informesService } from '../../services/informesService';
+import { informesService, verPdf } from '../../services/informesService';
 import { instructoresService } from '../../services/instructoresService';
 import { 
   FiFolder, 
@@ -9,7 +9,9 @@ import {
   FiClock, 
   FiFileText,
   FiChevronRight,
-  FiBookOpen
+  FiChevronDown,
+  FiBookOpen,
+  FiEye
 } from 'react-icons/fi';
 import { toast } from 'sonner';
 import PageContainer from '../../components/PageContainer';
@@ -23,6 +25,11 @@ export default function RevisionInformes() {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtroTipo, setFiltroTipo] = useState('todos');
 
+  // Expanded folders state
+  const [expandedInstructors, setExpandedInstructors] = useState({});
+  const [expandedVersions, setExpandedVersions] = useState({});
+  const [expandedMonths, setExpandedMonths] = useState({});
+
   // Modal / Detail state for review
   const [selectedInforme, setSelectedInforme] = useState(null);
   const [comentariosRevision, setComentariosRevision] = useState('');
@@ -35,6 +42,7 @@ export default function RevisionInformes() {
         informesService.getInformes(),
         instructoresService.getInstructores()
       ]);
+      console.log('>>> [DEBUG-FRONTEND] Respuesta de getInformes():', infList);
       setInformes(infList);
       setInstructores(instList);
     } catch (err) {
@@ -68,6 +76,21 @@ export default function RevisionInformes() {
     }
   };
 
+  const toggleInstructor = (instName) => {
+    setExpandedInstructors(prev => ({
+      ...prev,
+      [instName]: !prev[instName]
+    }));
+  };
+
+  const toggleMonth = (instName, mesName) => {
+    const key = `${instName}-${mesName}`;
+    setExpandedMonths(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
@@ -94,6 +117,56 @@ export default function RevisionInformes() {
     const matchTipo = filtroTipo === 'todos' ? true : inf.tipo === filtroTipo;
     return matchEstado && matchTipo;
   });
+
+  // Hierarchical grouping: Instructor -> Month -> Files
+  const agruparInformes = () => {
+    const groups = {};
+
+    filteredInformes.forEach(inf => {
+      const instName = inf.instructorNombre || 'Instructor Desconocido';
+      if (!groups[instName]) {
+        groups[instName] = {
+          name: instName,
+          area: inf.area || 'Sin Área',
+          months: {},
+          metrics: { total: 0, pendiente: 0, validado: 0, devuelto: 0 }
+        };
+      }
+
+      const mes = inf.mes || 'Sin Período';
+      if (!groups[instName].months[mes]) {
+        groups[instName].months[mes] = {
+          name: mes,
+          files: [],
+          metrics: { total: 0, pendiente: 0, validado: 0, devuelto: 0 }
+        };
+      }
+
+      groups[instName].months[mes].files.push(inf);
+
+      const estado = inf.estado?.toLowerCase();
+      const isVal = estado === 'validado' || estado === 'aprobado';
+      const isDev = estado === 'devuelto' || estado === 'rechazado';
+      const isPen = estado === 'pendiente';
+
+      if (isVal) {
+        groups[instName].months[mes].metrics.validado++;
+        groups[instName].metrics.validado++;
+      } else if (isDev) {
+        groups[instName].months[mes].metrics.devuelto++;
+        groups[instName].metrics.devuelto++;
+      } else if (isPen) {
+        groups[instName].months[mes].metrics.pendiente++;
+        groups[instName].metrics.pendiente++;
+      }
+      groups[instName].months[mes].metrics.total++;
+      groups[instName].metrics.total++;
+    });
+
+    return Object.values(groups);
+  };
+
+  const instructoresAgrupados = agruparInformes();
 
   return (
     <PageContainer>
@@ -179,80 +252,258 @@ export default function RevisionInformes() {
         </div>
       </div>
 
-      {/* Reports List */}
+      {/* Hierarchical Reports List */}
       <div className="space-y-4">
-        {filteredInformes.length === 0 ? (
+        {instructoresAgrupados.length === 0 ? (
           <div className="bg-white border border-gray-100 rounded-2xl p-12 text-center shadow-sm">
             <FiFileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-500 font-medium text-sm">No se encontraron informes para el filtro seleccionado.</p>
+            <p className="text-gray-500 font-medium text-sm">No se encontraron informes para los filtros seleccionados.</p>
           </div>
         ) : (
-          filteredInformes.map((inf) => {
-            const statusLower = inf.estado?.toLowerCase() || '';
-            const isPend = statusLower === 'pendiente';
-            const isAprob = statusLower === 'validado' || statusLower === 'aprobado';
-            const isRech = statusLower === 'devuelto' || statusLower === 'rechazado';
-
+          instructoresAgrupados.map((inst) => {
+            const isInstExpanded = !!expandedInstructors[inst.name];
             return (
-              <div 
-                key={inf.id}
-                className="bg-sena-green-light border border-green-100/50 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <h4 className="font-bold text-gray-800 text-base">{inf.instructorNombre}</h4>
-                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase ${
-                      isAprob ? 'bg-green-100 text-green-700' :
-                      isRech ? 'bg-red-100 text-red-700' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {inf.estado}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1">
-                    <p className="text-xs text-gray-500 font-medium">
-                      Área: <span className="text-gray-700 font-semibold">{inf.area}</span>
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      Mes: <span className="text-gray-700 font-semibold">{inf.mes}</span>
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium">
-                      Tipo: <span className="text-sena-green font-bold uppercase">{inf.tipo}</span>
-                    </p>
-                    <p className="text-xs text-gray-400 col-span-full mt-1 font-mono text-[10px]">
-                      Archivo: {inf.archivoNombre}
-                    </p>
-                  </div>
-
-                  {inf.comentarios && (
-                    <div className="bg-white/80 rounded-lg p-2.5 border border-green-100 text-xs text-gray-600 mt-2">
-                      <span className="font-bold text-gray-700 block">Comentarios de revisión:</span>
-                      {inf.comentarios}
+              <div key={inst.name} className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md">
+                
+                {/* LEVEL 1: Instructor Header */}
+                <div 
+                  onClick={() => toggleInstructor(inst.name)}
+                  className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none bg-white hover:bg-gray-50/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`p-3 rounded-xl transition-colors ${isInstExpanded ? 'bg-sena-green text-white' : 'bg-green-50 text-sena-green'}`}>
+                      <FiFolder className={`w-6 h-6 ${isInstExpanded ? 'fill-current opacity-40' : 'fill-current opacity-20'}`} />
                     </div>
-                  )}
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900">{inst.name}</h3>
+                      <p className="text-xs text-gray-500">Área: <span className="font-semibold text-gray-700">{inst.area}</span></p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 ml-14 sm:ml-0">
+                    <div className="flex gap-1.5 flex-wrap">
+                      <span className="bg-gray-50 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded border border-gray-200">
+                        {inst.metrics.total} informe(s)
+                      </span>
+                      {inst.metrics.pendiente > 0 && (
+                        <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-200">
+                          {inst.metrics.pendiente} pendiente(s)
+                        </span>
+                      )}
+                      {inst.metrics.validado > 0 && (
+                        <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-200">
+                          {inst.metrics.validado} validado(s)
+                        </span>
+                      )}
+                      {inst.metrics.devuelto > 0 && (
+                        <span className="bg-red-50 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded border border-red-200">
+                          {inst.metrics.devuelto} devuelto(s)
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      {isInstExpanded ? (
+                        <FiChevronDown className="w-5 h-5 text-gray-500" />
+                      ) : (
+                        <FiChevronRight className="w-5 h-5 text-gray-300" />
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3 self-end md:self-center">
-                  <button
-                    onClick={() => {
-                      if (inf.carpetaUrl) {
-                        window.open(inf.carpetaUrl, '_blank');
-                      } else {
-                        toast.warn(`Este instructor aún no tiene carpeta de Drive asignada. Asígnela desde la gestión de usuarios.`);
-                      }
-                    }}
-                    className="px-3.5 py-2 bg-white hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-1.5 border border-gray-100 hover:-translate-y-0.5"
-                  >
-                    <FiFolder className="w-4 h-4 text-amber-500" /> Abrir carpeta
-                  </button>
-                  <button
-                    onClick={() => handleOpenReviewModal(inf)}
-                    className="px-4 py-2 bg-sena-green hover:bg-sena-green-hover text-white text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-1 hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    Evaluar <FiChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+                {/* LEVEL 2: Months Container */}
+                {isInstExpanded && (
+                  <div className="px-5 pb-5 pt-2 bg-gray-50/50 border-t border-gray-50 space-y-3 animate-in slide-in-from-top-1 duration-200">
+                    {Object.values(inst.months).map((month) => {
+                      const monthKey = `${inst.name}-${month.name}`;
+                      const isMonthExpanded = !!expandedMonths[monthKey];
+                      return (
+                        <div key={month.name} className="bg-white border border-gray-150 rounded-xl overflow-hidden shadow-xs">
+                          
+                          {/* Month Header */}
+                          <div 
+                            onClick={() => toggleMonth(inst.name, month.name)}
+                            className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none bg-white hover:bg-gray-50/30 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-lg transition-colors ${isMonthExpanded ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-500'}`}>
+                                <FiFolder className="w-4 h-4 fill-current opacity-30" />
+                              </div>
+                              <span className="text-sm font-bold text-gray-800">{month.name}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-4 ml-10 sm:ml-0">
+                              <div className="flex gap-1.5 flex-wrap">
+                                {month.metrics.pendiente > 0 && (
+                                  <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                    {month.metrics.pendiente} pend
+                                  </span>
+                                )}
+                                {month.metrics.validado > 0 && (
+                                  <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                    {month.metrics.validado} val
+                                  </span>
+                                )}
+                                {month.metrics.devuelto > 0 && (
+                                  <span className="bg-red-50 text-red-700 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                    {month.metrics.devuelto} dev
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                {isMonthExpanded ? (
+                                  <FiChevronDown className="w-4 h-4 text-gray-500" />
+                                ) : (
+                                  <FiChevronRight className="w-4 h-4 text-gray-300" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* LEVEL 3: Informes list */}
+                          {isMonthExpanded && (
+                            <div className="p-4 bg-gray-50/30 border-t border-gray-100 space-y-3 animate-in slide-in-from-top-1 duration-150">
+                              {month.files.map((inf) => {
+                                const statusLower = inf.estado?.toLowerCase() || '';
+                                const isAprob = statusLower === 'validado' || statusLower === 'aprobado';
+                                const isRech = statusLower === 'devuelto' || statusLower === 'rechazado';
+                                return (
+                                  <div 
+                                    key={inf.id}
+                                    className="bg-white border border-gray-100 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                                  >
+                                    <div className="space-y-1.5 flex-1 min-w-0">
+                                      <div className="flex items-center gap-2.5">
+                                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase ${
+                                          isAprob ? 'bg-green-100 text-green-700' :
+                                          isRech ? 'bg-red-100 text-red-700' :
+                                          'bg-amber-100 text-amber-700'
+                                        }`}>
+                                          {inf.estado}
+                                        </span>
+                                        <h4 className="font-bold text-gray-800 text-sm">Informe {inf.tipo}</h4>
+                                      </div>
+                                      
+                                      <div className="text-[11px] text-gray-500 space-y-0.5">
+                                        <p className="truncate">Archivo: <span className="font-mono text-gray-700">{inf.archivoNombre}</span></p>
+                                        <p>Fecha: <span className="text-gray-700 font-semibold">{inf.date}</span> · Tamaño: <span className="text-gray-650">{inf.size}</span></p>
+                                      </div>
+
+                                      {inf.comentarios && (
+                                        <div className="bg-red-50/50 rounded-lg p-2 border border-red-100/50 text-[11px] text-red-800 mt-1 max-w-lg">
+                                          <span className="font-bold block">Observación de revisión:</span>
+                                          {inf.comentarios}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex flex-col items-end gap-2 shrink-0">
+                                      {/* Ver PDF */}
+                                      <button
+                                        onClick={async () => {
+                                          const toastId = toast.loading('Abriendo archivo PDF...');
+                                          try {
+                                            await verPdf(inf.id);
+                                            toast.dismiss(toastId);
+                                          } catch (err) {
+                                            const status = err?.response?.status || 'sin status';
+                                            const serverMsg = err?.response?.data?.message || err?.message || 'Error desconocido';
+                                            toast.error(`No se pudo abrir el archivo. (HTTP ${status}: ${serverMsg})`, { id: toastId });
+                                          }
+                                        }}
+                                        className="px-2.5 py-1.5 border border-sena-green text-sena-green hover:bg-sena-green/10 rounded-lg flex items-center gap-1 transition-all"
+                                        title="Ver versión en navegador"
+                                      >
+                                        <FiEye className="w-3.5 h-3.5" />
+                                        <span className="hidden sm:inline">Ver PDF</span>
+                                      </button>
+                                      {/* Evaluar (solo pendiente) */}
+                                      {statusLower === 'pendiente' && (
+                                        <button
+                                          onClick={() => handleOpenReviewModal(inf)}
+                                          className="px-3.5 py-1.5 bg-sena-green hover:bg-sena-green-hover text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 shadow-2xs"
+                                        >
+                                          Evaluar <FiChevronRight className="w-3 h-3" />
+                                        </button>
+                                      )}
+                                      {/* Historial de versiones */}
+                                      {inf.versiones && inf.versiones.length > 0 && (
+                                        <div className="flex flex-col w-full mt-2">
+                                          <button
+                                            onClick={() => {
+                                              setExpandedVersions(prev => ({
+                                                ...prev,
+                                                [inf.id]: !prev[inf.id]
+                                              }));
+                                            }}
+                                            className="flex items-center text-sm text-sena-green font-medium"
+                                          >
+                                            Historial de Versiones ({inf.versiones.length})
+                                            {expandedVersions[inf.id] ? (
+                                              <FiChevronDown className="w-4 h-4 ml-1" />
+                                            ) : (
+                                              <FiChevronRight className="w-4 h-4 ml-1" />
+                                            )}
+                                          </button>
+                                          {expandedVersions[inf.id] && (
+                                            <div className="mt-2 space-y-2">
+                                              {inf.versiones.map((ver) => {
+                                                const verStatus = ver.estado?.toLowerCase() || '';
+                                                const isAprob = verStatus === 'validado' || verStatus === 'aprobado';
+                                                const isRech = verStatus === 'devuelto' || verStatus === 'rechazado';
+                                                return (
+                                                  <div key={ver.id} className="bg-gray-50 border border-gray-100 rounded p-3 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-2">
+                                                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded uppercase ${
+                                                        isAprob ? 'bg-green-100 text-green-700' :
+                                                        isRech ? 'bg-red-100 text-red-700' :
+                                                        'bg-amber-100 text-amber-700'
+                                                      }`}>V{ver.numero_version}</span>
+                                                      <span className="font-medium text-gray-800">{ver.archivoNombre}</span>
+                                                    </div>
+                                                    <div className="text-xs text-gray-600">
+                                                      {ver.fecha}
+                                                    </div>
+                                                    {ver.comentarios && (
+                                                      <div className="text-xs text-gray-600 mt-1 max-w-lg">
+                                                        <span className="font-bold">Observación:</span> {ver.comentarios}
+                                                      </div>
+                                                    )}
+                                                    <button
+                                                      onClick={async () => {
+                                                        const toastId = toast.loading('Abriendo PDF versión...');
+                                                        try {
+                                                          await verPdf(ver.id);
+                                                          toast.dismiss(toastId);
+                                                        } catch (err) {
+                                                          const status = err?.response?.status || 'sin status';
+                                                          const serverMsg = err?.response?.data?.message || err?.message || 'Error desconocido';
+                                                          toast.error(`No se pudo abrir el archivo. (HTTP ${status}: ${serverMsg})`, { id: toastId });
+                                                        }
+                                                      }}
+                                                      className="px-2.5 py-1 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded text-[10px]"
+                                                    >
+                                                      Ver PDF
+                                                    </button>
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })
