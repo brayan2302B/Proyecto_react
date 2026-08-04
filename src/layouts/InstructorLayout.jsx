@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { FiHome, FiFileText, FiSettings, FiUser, FiBell, FiLogOut, FiCheckSquare } from 'react-icons/fi';
 import logoSena from '../assets/logo-sena.png';
+import api from '../services/api';
 import NotificacionesPanel from '../components/NotificacionesPanel';
 import AsistenteWidget from '../components/AsistenteWidget';
 
@@ -14,6 +15,23 @@ export default function InstructorLayout() {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const bellFabRef = useRef(null);
+
+  // ── Polling del contador de no leídas (cada 30s) ───────────────────────────
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const res = await api.get('/notificaciones/unread-count');
+      setUnreadCount(res.data.count ?? 0);
+    } catch (_) {
+      // Silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const timerId = setInterval(fetchUnreadCount, 30_000);
+    return () => clearInterval(timerId);
+  }, [fetchUnreadCount]);
+  // ─────────────────────────────────────────────────────────────────────────────
 
   const navItems = [
     { name: 'Inicio', path: '/instructor/dashboard', icon: FiHome },

@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiKey, FiInfo, FiUploadCloud, FiEdit2, FiTrash2, FiSave, FiCheckCircle } from 'react-icons/fi';
 import { toast } from 'sonner';
+import api from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 
 export default function FirmaDigitalManager({ defaultName = '', defaultRole = '', onFirmaSave }) {
+  const { updateLocalUser } = useAuth();
   const [nombre, setNombre] = useState(defaultName);
   const [cargo, setCargo] = useState(defaultRole);
   const [modo, setModo] = useState('dibujar'); // 'dibujar' | 'subir'
+  const [savingFirma, setSavingFirma] = useState(false);
   
   // Drawing state
   const canvasRef = useRef(null);
@@ -110,7 +114,7 @@ export default function FirmaDigitalManager({ defaultName = '', defaultRole = ''
   };
 
   // --- Save Logic ---
-  const handleLocalSave = () => {
+  const handleLocalSave = async () => {
     if (!nombre.trim()) {
       toast.error('El Nombre completo es obligatorio');
       return;
@@ -132,17 +136,33 @@ export default function FirmaDigitalManager({ defaultName = '', defaultRole = ''
       signatureData = uploadedImage;
     }
 
-    setIsSaved(true);
-    toast.success('Firma confirmada localmente. Usa "Guardar configuración" para persistir.');
-    
-    // Pass data up
-    if (onFirmaSave) {
-      onFirmaSave({
-        nombre,
-        cargo,
-        modo,
-        base64: signatureData
+    setSavingFirma(true);
+    const toastId = toast.loading('Guardando firma digital en el servidor...');
+
+    try {
+      const res = await api.post('/personas/me/firma-base64', {
+        base64: signatureData,
       });
+
+      const signaturePath = res.data.firma_digital_ruta;
+      updateLocalUser({ firma_digital_ruta: signaturePath });
+      setIsSaved(true);
+      toast.success('¡Firma digital guardada y registrada correctamente!', { id: toastId });
+
+      if (onFirmaSave) {
+        onFirmaSave({
+          nombre,
+          cargo,
+          modo,
+          base64: signatureData,
+          firma_digital_ruta: signaturePath,
+        });
+      }
+    } catch (err) {
+      console.error('Error al guardar firma:', err);
+      toast.error('Error al guardar la firma en el servidor', { id: toastId });
+    } finally {
+      setSavingFirma(false);
     }
   };
 
@@ -306,12 +326,13 @@ export default function FirmaDigitalManager({ defaultName = '', defaultRole = ''
             <button
               type="button"
               onClick={handleLocalSave}
-              className={`flex-[2] py-2.5 px-4 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer ${
+              disabled={savingFirma}
+              className={`flex-[2] py-2.5 px-4 text-white text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                 isSaved ? 'bg-green-600 hover:bg-green-700' : 'bg-[#407754] hover:bg-[#335f43]'
               }`}
             >
               <FiSave className="w-4 h-4" /> 
-              {isSaved ? 'Firma guardada (Lista)' : 'Guardar firma'}
+              {savingFirma ? 'Guardando en servidor...' : isSaved ? 'Firma guardada en servidor' : 'Guardar firma'}
             </button>
           </div>
         </div>

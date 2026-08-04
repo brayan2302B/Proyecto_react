@@ -9,6 +9,7 @@ import {
   FiInfo
 } from 'react-icons/fi';
 import { toast } from 'sonner';
+import api from '../../services/api';
 import { usePeriodo } from '../../components/PeriodoContext';
 import { useAuth } from '../../hooks/useAuth';
 import PageContainer from '../../components/PageContainer';
@@ -29,6 +30,26 @@ export default function Configuracion() {
   const [notifAprobacion, setNotifAprobacion] = useState(false);
   const [notifCorreo, setNotifCorreo] = useState(true);
   const [firmaData, setFirmaData] = useState(null); // Estado para la firma final
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  // Cargar preferencias desde el backend al montar
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get('/personas/me/settings');
+        const prefs = res.data;
+        if (prefs.notif_pendientes !== undefined) setNotifPendientes(Boolean(prefs.notif_pendientes));
+        if (prefs.notif_nuevos !== undefined) setNotifNuevos(Boolean(prefs.notif_nuevos));
+        if (prefs.notif_aprobacion !== undefined) setNotifAprobacion(Boolean(prefs.notif_aprobacion));
+        if (prefs.notif_correo !== undefined) setNotifCorreo(Boolean(prefs.notif_correo));
+      } catch (err) {
+        console.error('No se pudieron cargar las preferencias:', err);
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   // Form states - Periodo
   const [periodoActivo, setPeriodoActivo] = useState(periodoInfo.mesActivo);
@@ -42,18 +63,63 @@ export default function Configuracion() {
     setBloquearEnvios(!periodoInfo.habilitado);
   }, [periodoInfo]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
+    try {
+      // Persistir periodo
       updatePeriodo({
         mesActivo: periodoActivo,
         fechaLimite: `${fechaLimite}T23:59:00`,
         habilitado: !bloquearEnvios
       });
+      // Persistir preferencias en backend
+      await api.put('/personas/me/settings', {
+        notif_pendientes: notifPendientes,
+        notif_nuevos: notifNuevos,
+        notif_aprobacion: notifAprobacion,
+        notif_correo: notifCorreo,
+      });
+      toast.success('Configuración guardada correctamente');
+    } catch (err) {
+      console.error('Error al guardar configuración:', err);
+      toast.error('No se pudo guardar la configuración');
+    } finally {
       setSaving(false);
-      toast.success('Configuración de coordinación guardada correctamente');
-    }, 800);
+    }
   };
+
+  // ── Caché del navegador ─────────────────────────────────────────────────────
+  const handleClearCache = async () => {
+    const confirmed = window.confirm(
+      '¿Deseas eliminar la caché local del navegador?\n\nEsta acción limpiará datos temporales almacenados en tu dispositivo. Tu sesión se mantendrá activa.'
+    );
+    if (!confirmed) return;
+
+    try {
+      const token = localStorage.getItem('stimi_token');
+      const userStored = localStorage.getItem('stimi_user');
+      localStorage.clear();
+      if (token) localStorage.setItem('stimi_token', token);
+      if (userStored) localStorage.setItem('stimi_user', userStored);
+
+      sessionStorage.clear();
+
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
+      }
+
+      toast.success('✅ Caché local eliminada correctamente. Recargando...', {
+        duration: 2000,
+      });
+
+      setTimeout(() => window.location.reload(), 1800);
+    } catch (err) {
+      console.error('Error al limpiar caché:', err);
+      toast.error('No se pudo limpiar la caché completamente');
+    }
+  };
+  // ───────────────────────────────────────────────────────────────────────────
 
   const handleCancel = () => {
     setPeriodoActivo(periodoInfo.mesActivo);
@@ -246,13 +312,14 @@ export default function Configuracion() {
         {/* Danger Zone Card */}
         <div className="bg-red-50/50 border border-red-200 rounded-3xl p-6 shadow-sm">
           <h4 className="text-sm font-extrabold text-red-700 mb-1">Zona de Peligro</h4>
-          <p className="text-[10px] text-gray-500 mb-4">Acciones irreversibles sobre los datos del sistema</p>
+          <p className="text-[10px] text-gray-500 mb-4">Acciones sobre datos locales de tu sesión</p>
           <button
             type="button"
-            onClick={() => toast.warning('Esta acción destructiva simulada está deshabilitada temporalmente.')}
-            className="px-4 py-2 border border-red-300 hover:bg-red-50 text-red-600 text-xs font-bold rounded-xl transition-all cursor-pointer"
+            id="btn-clear-cache-coordinador"
+            onClick={handleClearCache}
+            className="px-4 py-2 border border-red-300 hover:bg-red-100 bg-red-50 text-red-600 text-xs font-bold rounded-xl transition-all cursor-pointer"
           >
-            Reestablecer todos los períodos
+            🗑️ Eliminar caché local del navegador
           </button>
         </div>
       </div>

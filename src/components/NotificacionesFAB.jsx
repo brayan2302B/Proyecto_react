@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { FiBell, FiClock, FiCheck, FiInfo, FiInbox } from 'react-icons/fi';
+import { FiBell, FiClock, FiCheck, FiInfo, FiInbox, FiTrash2, FiAlertCircle } from 'react-icons/fi';
 import api from '../services/api';
 
 function timeAgo(isoStr) {
@@ -15,19 +15,49 @@ function timeAgo(isoStr) {
   return new Date(isoStr).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
 }
 
+const POLL_INTERVAL = 30_000; // 30 segundos
+
 export default function NotificacionesFAB() {
   const [isOpen, setIsOpen] = useState(false);
   const [alertas, setAlertas] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const popoverRef = useRef(null);
 
-  const unreadCount = alertas.filter((a) => !a.leida).length;
+  // ── Polling del contador de no leídas (cada 30s) ─────────────────────────
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      let res;
+      try {
+        res = await api.get('/notificaciones/unread-count');
+      } catch {
+        res = await api.get('/notifications/unread-count');
+      }
+      setUnreadCount(res.data.count ?? 0);
+    } catch (_) {
+      // Silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUnreadCount(); // llamada inicial
+    const timerId = setInterval(fetchUnreadCount, POLL_INTERVAL);
+    return () => clearInterval(timerId);
+  }, [fetchUnreadCount]);
+  // ─────────────────────────────────────────────────────────────────────────
 
   const fetchAlertas = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await api.get('/notificaciones');
-      setAlertas(response.data);
+      let response;
+      try {
+        response = await api.get('/notificaciones');
+      } catch {
+        response = await api.get('/notifications');
+      }
+      const data = Array.isArray(response.data) ? response.data : [];
+      setAlertas(data);
+      setUnreadCount(data.filter((a) => !(a.leida ?? a.read)).length);
     } catch (err) {
       console.error('Error al cargar notificaciones del coordinador:', err);
     } finally {
@@ -64,8 +94,13 @@ export default function NotificacionesFAB() {
 
   const markAllAsRead = async () => {
     try {
-      await api.patch('/notificaciones/leer-todas');
-      setAlertas((prev) => prev.map((a) => ({ ...a, leida: true })));
+      try {
+        await api.patch('/notificaciones/leer-todas');
+      } catch {
+        await api.patch('/notifications/read-all');
+      }
+      setAlertas((prev) => prev.map((a) => ({ ...a, leida: true, read: true })));
+      setUnreadCount(0);
     } catch (err) {
       console.error('Error al marcar notificaciones como leídas:', err);
     }
@@ -73,12 +108,40 @@ export default function NotificacionesFAB() {
 
   const markOneAsRead = async (id) => {
     try {
-      await api.patch(`/notificaciones/${id}/leer`);
-      setAlertas((prev) => prev.map((a) => a.id_notificacion === id ? { ...a, leida: true } : a));
+      try {
+        await api.patch(`/notificaciones/${id}/leer`);
+      } catch {
+        await api.patch(`/notifications/${id}/read`);
+      }
+      setAlertas((prev) => prev.map((a) => {
+        const item = a.id_notificacion ?? a.id;
+        return item === id ? { ...a, leida: true, read: true } : a;
+      }));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
       console.error('Error al marcar notificación como leída:', err);
     }
   };
+
+  // ── Eliminar notificación ────────────────────────────────────────────────
+  const deleteOne = async (e, id) => {
+    e.stopPropagation();
+    try {
+      try {
+        await api.delete(`/notificaciones/${id}`);
+      } catch {
+        await api.delete(`/notifications/${id}`);
+      }
+      const removed = alertas.find((a) => (a.id_notificacion ?? a.id) === id);
+      setAlertas((prev) => prev.filter((a) => (a.id_notificacion ?? a.id) !== id));
+      if (removed && !(removed.leida ?? removed.read)) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error('Error al eliminar notificación:', err);
+    }
+  };
+  // ────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="fixed bottom-22 right-6 z-40" ref={popoverRef}>
@@ -127,34 +190,51 @@ export default function NotificacionesFAB() {
                 <p className="text-xs font-semibold">Sin notificaciones</p>
               </div>
             ) : (
-              alertas.map((alerta) => (
-                <div
-                  key={alerta.id_notificacion}
-                  onClick={() => !alerta.leida && markOneAsRead(alerta.id_notificacion)}
-                  className={`p-3 rounded-xl border text-[11px] leading-relaxed transition-colors flex gap-2 cursor-pointer ${
-                    alerta.leida
-                      ? 'bg-white border-gray-100 text-gray-500'
-                      : 'bg-green-50 border-green-100 text-gray-800'
-                  }`}
-                >
-                  <div className="mt-0.5 shrink-0">
-                    {alerta.tipo === 'warning' || alerta.tipo === 'error' ? (
-                      <FiInfo className="text-amber-500 w-3.5 h-3.5" />
-                    ) : (
-                      <FiCheck className="text-[#407754] w-3.5 h-3.5" />
-                    )}
+              alertas.map((alerta) => {
+                const id = alerta.id_notificacion ?? alerta.id;
+                const msg = alerta.mensaje || alerta.message || alerta.title || 'Notificación';
+                const tipo = alerta.tipo || alerta.type || 'info';
+                const isRead = alerta.leida ?? alerta.read ?? false;
+                const dateStr = alerta.created_at || alerta.createdAt;
+
+                return (
+                  <div
+                    key={id}
+                    onClick={() => !isRead && markOneAsRead(id)}
+                    className={`group p-3 rounded-xl border text-[11px] leading-relaxed transition-colors flex gap-2 cursor-pointer ${
+                      isRead
+                        ? 'bg-white border-gray-100 text-gray-500'
+                        : 'bg-green-50 border-green-100 text-gray-800'
+                    }`}
+                  >
+                    <div className="mt-0.5 shrink-0">
+                      {tipo === 'warning' || tipo === 'error' ? (
+                        <FiInfo className="text-amber-500 w-3.5 h-3.5" />
+                      ) : (
+                        <FiCheck className="text-[#407754] w-3.5 h-3.5" />
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-0.5">
+                      <p className={isRead ? 'font-normal' : 'font-semibold'}>{msg}</p>
+                      <span className="text-[9px] text-gray-400 font-medium flex items-center gap-1">
+                        <FiClock className="w-2.5 h-2.5" /> {timeAgo(dateStr)}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1 shrink-0">
+                      <button
+                        onClick={(e) => deleteOne(e, id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:text-red-400 text-gray-300 cursor-pointer"
+                        title="Eliminar"
+                      >
+                        <FiTrash2 className="w-3 h-3" />
+                      </button>
+                      {!isRead && (
+                        <span className="mt-1 w-2 h-2 bg-[#407754] rounded-full shrink-0"></span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 space-y-0.5">
-                    <p className={alerta.leida ? 'font-normal' : 'font-semibold'}>{alerta.mensaje}</p>
-                    <span className="text-[9px] text-gray-400 font-medium flex items-center gap-1">
-                      <FiClock className="w-2.5 h-2.5" /> {timeAgo(alerta.created_at)}
-                    </span>
-                  </div>
-                  {!alerta.leida && (
-                    <span className="mt-1.5 w-2 h-2 bg-[#407754] rounded-full shrink-0"></span>
-                  )}
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

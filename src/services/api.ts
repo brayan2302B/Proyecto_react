@@ -7,13 +7,35 @@ const api = axios.create({
   },
 });
 
-// Request Interceptor: Attach JWT Bearer Token if it exists in localStorage
+// ── Request Interceptor ───────────────────────────────────────────────────────
+// Adjunta el JWT Bearer Token y, opcionalmente, el header x-tenant-id para
+// la arquitectura Multitenant. No rompe el comportamiento si el usuario no
+// tiene un Centro de Formación asignado (fallback transparente al backend).
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('stimi_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // ── Identificador del Centro de Formación (Multitenant) ─────────────────
+    const userStr = localStorage.getItem('stimi_user');
+    if (userStr && config.headers) {
+      try {
+        const user = JSON.parse(userStr);
+        // Adjuntar el centroId/centroSlug como header x-tenant-id si existe
+        const centroId: string | undefined =
+          user.centroId || user.centroSlug || user.centro || undefined;
+
+        if (centroId) {
+          config.headers['x-tenant-id'] = centroId;
+        }
+      } catch (_) {
+        // Si el JSON no es válido no hacer nada (fallback a tenant por defecto)
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     return config;
   },
   (error) => {
@@ -21,7 +43,8 @@ api.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Handle errors globally (e.g., token expiration / 401 Unauthorized)
+// ── Response Interceptor ─────────────────────────────────────────────────────
+// Maneja errores globales: token expirado / 401 Unauthorized
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -29,7 +52,7 @@ api.interceptors.response.use(
       console.warn('Session expired or unauthorized. Logging out...');
       localStorage.removeItem('stimi_token');
       localStorage.removeItem('stimi_user');
-      // Only redirect to login if we are not already on public pages
+      // Solo redirigir si no estamos ya en una página pública
       if (
         !window.location.pathname.includes('/login') &&
         !window.location.pathname.includes('/registro') &&

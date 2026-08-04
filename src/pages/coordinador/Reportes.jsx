@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { reportesService } from '../../services/reportesService';
 import { instructoresService } from '../../services/instructoresService';
 import { 
@@ -22,7 +22,9 @@ import {
   FiActivity, 
   FiDownload, 
   FiFilter, 
-  FiBarChart2 
+  FiBarChart2,
+  FiChevronDown,
+  FiFile
 } from 'react-icons/fi';
 import { toast } from 'sonner';
 import PageContainer from '../../components/PageContainer';
@@ -31,6 +33,8 @@ export default function Reportes() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [instructores, setInstructores] = useState([]);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
 
   // Filter states
   const [selectedInst, setSelectedInst] = useState('todos');
@@ -62,13 +66,171 @@ export default function Reportes() {
     loadData();
   }, []);
 
+  // Close export menu on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
+        setShowExportMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleApplyFilters = () => {
     loadData();
     toast.success('Filtros aplicados con éxito');
   };
 
-  const handleExportReport = () => {
-    toast.success('Reporte exportado correctamente en formato PDF/Excel.');
+  // ── Exportación a Excel / CSV ────────────────────────────────────────────────
+  const exportToCSV = () => {
+    if (!stats) return;
+    setShowExportMenu(false);
+
+    const headers = ['ID Instructor', 'Nombre Instructor', 'Informes Validados', 'Informes Rechazados', 'Informes Pendientes', '% Cumplimiento'];
+    
+    const rows = (stats.cumplimientoPorInstructor || []).map(inst => {
+      const total = inst.aprobados + inst.rechazados + inst.pendientes;
+      const pct = total > 0 ? Math.round((inst.aprobados / total) * 100) : 0;
+      return [
+        `"${inst.id}"`,
+        `"${inst.nombre.replace(/"/g, '""')}"`,
+        inst.aprobados,
+        inst.rechazados,
+        inst.pendientes,
+        `"${pct}%"`
+      ];
+    });
+
+    const metadata = [
+      ['SENA - SISTEMA DE TRAZABILIDAD MENSUAL DE INFORMES (STIMI)'],
+      ['REPORTE Y ESTADÍSTICAS GENERALES DE CUMPLIMIENTO'],
+      [`Fecha de Generación: ${new Date().toLocaleString('es-CO')}`],
+      [`Filtros Aplicados: Instructor=${selectedInst}, Mes=${selectedMes}, Área=${selectedArea}`],
+      [''],
+      ['RESUMEN GENERAL'],
+      ['Total Informes', stats.totalInformes],
+      ['Validados / Aprobados', stats.aprobados],
+      ['Rechazados / Devueltos', stats.rechazados],
+      ['Pendientes', stats.pendientes],
+      ['Tasa de Cumplimiento General', `${stats.tasaCumplimiento}%`],
+      [''],
+      ['DESGLOSE POR INSTRUCTOR'],
+      headers,
+      ...rows
+    ];
+
+    const csvContent = '\uFEFF' + metadata.map(e => e.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Reporte_STIMI_SENA_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('📊 Reporte exportado a Excel / CSV correctamente');
+  };
+
+  // ── Exportación a PDF Oficial ────────────────────────────────────────────────
+  const exportToPDF = () => {
+    if (!stats) return;
+    setShowExportMenu(false);
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('Por favor permite las ventanas emergentes para descargar el PDF');
+      return;
+    }
+
+    const rowsHtml = (stats.cumplimientoPorInstructor || []).map(inst => {
+      const total = inst.aprobados + inst.rechazados + inst.pendientes;
+      const pct = total > 0 ? Math.round((inst.aprobados / total) * 100) : 0;
+      return `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${inst.nombre}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #407754; font-weight: bold;">${inst.aprobados}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #ef4444; font-weight: bold;">${inst.rechazados}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #f59e0b; font-weight: bold;">${inst.pendientes}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: center; font-weight: bold;">${pct}%</td>
+        </tr>
+      `;
+    }).join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>Reporte de Cumplimiento - STIMI SENA</title>
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #111827; }
+          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #39A900; padding-bottom: 15px; margin-bottom: 20px; }
+          .title { font-size: 22px; font-weight: bold; color: #39A900; }
+          .subtitle { font-size: 12px; color: #4b5563; margin-top: 4px; }
+          .meta-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; font-size: 11px; }
+          .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 25px; }
+          .stat-card { background: #f3f4f6; border-radius: 10px; padding: 12px; text-align: center; }
+          .stat-title { font-size: 10px; font-weight: bold; color: #6b7280; text-transform: uppercase; }
+          .stat-value { font-size: 22px; font-weight: bold; margin-top: 4px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+          th { background: #39A900; color: white; padding: 10px; text-align: left; }
+          .footer { margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 15px; text-align: center; font-size: 10px; color: #9ca3af; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="title">SENA · STIMI</div>
+            <div class="subtitle">Sistema de Trazabilidad Mensual de Informes — Reporte Oficial</div>
+          </div>
+          <div style="text-align: right; font-size: 11px; color: #4b5563;">
+            <div><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-CO')}</div>
+            <div><strong>Sede:</strong> Regional Antioquia / Huila</div>
+          </div>
+        </div>
+
+        <div class="meta-box">
+          <strong>Filtros aplicados:</strong> Instructor: ${selectedInst} | Mes: ${selectedMes} | Área: ${selectedArea}
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-title">Total Informes</div><div class="stat-value" style="color: #2563eb;">${stats.totalInformes}</div></div>
+          <div class="stat-card"><div class="stat-title">Validados</div><div class="stat-value" style="color: #407754;">${stats.aprobados}</div></div>
+          <div class="stat-card"><div class="stat-title">Rechazados</div><div class="stat-value" style="color: #ef4444;">${stats.rechazados}</div></div>
+          <div class="stat-card"><div class="stat-title">% Cumplimiento</div><div class="stat-value" style="color: #7c3aed;">${stats.tasaCumplimiento}%</div></div>
+        </div>
+
+        <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">Desglose de Cumplimiento por Instructor</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Instructor</th>
+              <th style="text-align: center;">Validados</th>
+              <th style="text-align: center;">Rechazados</th>
+              <th style="text-align: center;">Pendientes</th>
+              <th style="text-align: center;">% Cumplimiento</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          Documento generado automáticamente por STIMI · Servicio Nacional de Aprendizaje SENA
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+          };
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+    toast.success('📄 Vista previa de PDF generada. Elija Guardar como PDF');
   };
 
   if (loading || !stats) {
@@ -99,12 +261,33 @@ export default function Reportes() {
           <h2 className="text-2xl font-bold text-gray-800">Reportes y Estadísticas</h2>
           <p className="text-sm text-gray-500">Métricas de cumplimiento y trazabilidad mensual de instructores</p>
         </div>
-        <button
-          onClick={handleExportReport}
-          className="px-4 py-2.5 bg-sena-green hover:bg-sena-green-hover text-white text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 hover:-translate-y-0.5 hover:shadow-md self-stretch sm:self-auto cursor-pointer"
-        >
-          <FiDownload className="w-4 h-4" /> Exportar Reporte
-        </button>
+
+        {/* Dropdown de Exportación */}
+        <div className="relative self-stretch sm:self-auto" ref={exportMenuRef}>
+          <button
+            onClick={() => setShowExportMenu(!showExportMenu)}
+            className="w-full sm:w-auto px-4 py-2.5 bg-[#407754] hover:bg-[#335f43] text-white text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer"
+          >
+            <FiDownload className="w-4 h-4" /> Exportar Reporte <FiChevronDown className="w-3.5 h-3.5" />
+          </button>
+
+          {showExportMenu && (
+            <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <button
+                onClick={exportToCSV}
+                className="w-full text-left px-3 py-2.5 hover:bg-green-50 rounded-xl text-xs font-semibold text-gray-700 flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <FiFileText className="w-4 h-4 text-[#407754]" /> Exportar a Excel / CSV (.csv)
+              </button>
+              <button
+                onClick={exportToPDF}
+                className="w-full text-left px-3 py-2.5 hover:bg-red-50 rounded-xl text-xs font-semibold text-gray-700 flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <FiFile className="w-4 h-4 text-red-500" /> Exportar a PDF Imprimible
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Query Filters */}

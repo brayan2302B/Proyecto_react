@@ -191,7 +191,7 @@ export default function CoordinadorLayout() {
               {/* Action Buttons */}
               <div className="flex gap-2 border-t border-gray-50 pt-3">
                 <button 
-                  onClick={() => { toast.info('Editar perfil simulado'); setIsProfileOpen(false); }}
+                  onClick={() => { navigate('/coordinador/perfil', { state: { editMode: true } }); setIsProfileOpen(false); }}
                   className="flex-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-100 text-gray-600 text-[10px] font-bold rounded-xl transition-all cursor-pointer text-center"
                 >
                   Editar perfil
