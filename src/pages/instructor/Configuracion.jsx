@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
   FiBell, 
@@ -8,6 +8,7 @@ import {
   FiMonitor
 } from 'react-icons/fi';
 import { toast } from 'sonner';
+import api from '../../services/api';
 import PageContainer from '../../components/PageContainer';
 import SettingsTabs from '../../components/SettingsTabs';
 
@@ -21,13 +22,43 @@ export default function Configuracion() {
   const [notifEvidencias, setNotifEvidencias] = useState(true);
   const [notifSeguimiento, setNotifSeguimiento] = useState(true);
   const [notifCorreo, setNotifCorreo] = useState(false);
+  const [loadingSettings, setLoadingSettings] = useState(true);
 
-  const handleSave = () => {
+  // Cargar preferencias desde el backend al montar
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get('/personas/me/settings');
+        const prefs = res.data;
+        if (prefs.notif_pendientes !== undefined) setNotifPendientes(Boolean(prefs.notif_pendientes));
+        if (prefs.notif_evidencias !== undefined) setNotifEvidencias(Boolean(prefs.notif_evidencias));
+        if (prefs.notif_seguimiento !== undefined) setNotifSeguimiento(Boolean(prefs.notif_seguimiento));
+        if (prefs.notif_correo !== undefined) setNotifCorreo(Boolean(prefs.notif_correo));
+      } catch (err) {
+        console.error('No se pudieron cargar las preferencias:', err);
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => {
+    try {
+      await api.put('/personas/me/settings', {
+        notif_pendientes: notifPendientes,
+        notif_evidencias: notifEvidencias,
+        notif_seguimiento: notifSeguimiento,
+        notif_correo: notifCorreo,
+      });
+      toast.success('Configuración guardada correctamente');
+    } catch (err) {
+      console.error('Error al guardar configuración:', err);
+      toast.error('No se pudo guardar la configuración');
+    } finally {
       setSaving(false);
-      toast.success('Configuración de instructor guardada correctamente');
-    }, 800);
+    }
   };
 
   const handleCancel = () => {
@@ -37,6 +68,43 @@ export default function Configuracion() {
     setNotifCorreo(false);
     toast.info('Se han descartado los cambios en la configuración');
   };
+
+  // ── Caché del navegador ─────────────────────────────────────────────────────
+  const handleClearCache = async () => {
+    const confirmed = window.confirm(
+      '¿Deseas eliminar la caché local del navegador?\n\nEsta acción limpiará datos temporales almacenados en tu dispositivo. Tu sesión se mantendrá activa.'
+    );
+    if (!confirmed) return;
+
+    try {
+      // 1. Limpiar localStorage preservando la sesión activa
+      const token = localStorage.getItem('stimi_token');
+      const user = localStorage.getItem('stimi_user');
+      localStorage.clear();
+      if (token) localStorage.setItem('stimi_token', token);
+      if (user) localStorage.setItem('stimi_user', user);
+
+      // 2. Limpiar sessionStorage completo
+      sessionStorage.clear();
+
+      // 3. Limpiar Cache API (Service Worker caches)
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map((name) => caches.delete(name)));
+      }
+
+      toast.success('✅ Caché local eliminada correctamente. Recargando...', {
+        duration: 2000,
+      });
+
+      // 4. Recargar la página tras un breve delay para que el toast sea visible
+      setTimeout(() => window.location.reload(), 1800);
+    } catch (err) {
+      console.error('Error al limpiar caché:', err);
+      toast.error('No se pudo limpiar la caché completamente');
+    }
+  };
+  // ───────────────────────────────────────────────────────────────────────────
 
   // Switch wrapper component for clean render
   const SwitchItem = ({ label, desc, checked, onChange }) => (
@@ -194,13 +262,14 @@ export default function Configuracion() {
         {/* Danger Zone Card */}
         <div className="bg-red-50/50 border border-red-200 rounded-3xl p-6 shadow-sm">
           <h4 className="text-sm font-extrabold text-red-700 mb-1">Zona de Peligro</h4>
-          <p className="text-[10px] text-gray-500 mb-4">Acciones irreversibles sobre tu cuenta</p>
+          <p className="text-[10px] text-gray-500 mb-4">Acciones sobre datos locales de tu sesión</p>
           <button
             type="button"
-            onClick={() => toast.warning('Esta acción destructiva simulada está deshabilitada temporalmente.')}
-            className="px-4 py-2 border border-red-300 hover:bg-red-50 text-red-600 text-xs font-bold rounded-xl transition-all cursor-pointer"
+            id="btn-clear-cache-instructor"
+            onClick={handleClearCache}
+            className="px-4 py-2 border border-red-300 hover:bg-red-100 bg-red-50 text-red-600 text-xs font-bold rounded-xl transition-all cursor-pointer"
           >
-            Eliminar caché local del navegador
+            🗑️ Eliminar caché local del navegador
           </button>
         </div>
       </div>

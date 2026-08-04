@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { FiCheckCircle, FiAlertTriangle, FiAlertCircle, FiClock, FiX, FiInbox } from 'react-icons/fi';
+import { FiCheckCircle, FiAlertTriangle, FiAlertCircle, FiClock, FiX, FiInbox, FiTrash2, FiRefreshCw } from 'react-icons/fi';
 import api from '../services/api';
 
 const iconMap = {
@@ -33,24 +33,26 @@ function timeAgo(isoStr) {
 export default function NotificacionesPanel({ isOpen, onClose, anchorRef, onUnreadChange }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const panelRef = useRef(null);
 
-  const unreadCount = notifications.filter(n => !n.leida).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   // Sync unread count to parent layout
   useEffect(() => {
     onUnreadChange?.(unreadCount);
   }, [unreadCount, onUnreadChange]);
 
-  // Fetch notifications from the real backend
+  // Fetch notifications from the real backend (GET /api/notifications)
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await api.get('/notificaciones');
-      setNotifications(response.data);
+      const res = await api.get('/notifications');
+      setNotifications(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Error al cargar notificaciones:', err);
-      // Silently fail — don't crash the panel
+      setError('No se pudieron cargar las notificaciones');
     } finally {
       setLoading(false);
     }
@@ -81,8 +83,8 @@ export default function NotificacionesPanel({ isOpen, onClose, anchorRef, onUnre
 
   const markAllRead = async () => {
     try {
-      await api.patch('/notificaciones/leer-todas');
-      setNotifications(prev => prev.map(n => ({ ...n, leida: true })));
+      await api.patch('/notifications/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     } catch (err) {
       console.error('Error al marcar notificaciones como leídas:', err);
     }
@@ -90,12 +92,24 @@ export default function NotificacionesPanel({ isOpen, onClose, anchorRef, onUnre
 
   const markOneRead = async (id) => {
     try {
-      await api.patch(`/notificaciones/${id}/leer`);
-      setNotifications(prev => prev.map(n => n.id_notificacion === id ? { ...n, leida: true } : n));
+      await api.patch(`/notifications/${id}/read`);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
     } catch (err) {
       console.error('Error al marcar notificación como leída:', err);
     }
   };
+
+  // ── Eliminar notificación (DELETE /api/notifications/:id) ──────────────────────
+  const deleteOne = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await api.delete(`/notifications/${id}`);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (err) {
+      console.error('Error al eliminar notificación:', err);
+    }
+  };
+  // ────────────────────────────────────────────────────────────────────────────
 
   if (!isOpen) return null;
 
@@ -116,12 +130,12 @@ export default function NotificacionesPanel({ isOpen, onClose, anchorRef, onUnre
           {unreadCount > 0 && (
             <button 
               onClick={markAllRead}
-              className="text-xs text-[#407754] font-semibold hover:underline"
+              className="text-xs text-[#407754] font-semibold hover:underline cursor-pointer"
             >
               Marcar leídas
             </button>
           )}
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
             <FiX className="w-4 h-4" />
           </button>
         </div>
@@ -134,6 +148,17 @@ export default function NotificacionesPanel({ isOpen, onClose, anchorRef, onUnre
             <div className="w-8 h-8 border-3 border-[#407754] border-t-transparent rounded-full animate-spin"></div>
             <p className="text-xs text-gray-400 font-medium">Cargando notificaciones...</p>
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-8 px-4 gap-2 text-center text-red-500">
+            <FiAlertCircle className="w-8 h-8" />
+            <p className="text-xs font-bold">{error}</p>
+            <button
+              onClick={fetchNotifications}
+              className="mt-1 px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-lg flex items-center gap-1 cursor-pointer"
+            >
+              <FiRefreshCw className="w-3.5 h-3.5" /> Reintentar
+            </button>
+          </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 gap-2 text-gray-400">
             <FiInbox className="w-10 h-10" />
@@ -143,27 +168,36 @@ export default function NotificacionesPanel({ isOpen, onClose, anchorRef, onUnre
         ) : (
           notifications.map((notif) => (
             <div
-              key={notif.id_notificacion}
-              onClick={() => !notif.leida && markOneRead(notif.id_notificacion)}
-              className={`px-5 py-3.5 flex items-start gap-3 hover:bg-gray-50 transition-colors cursor-pointer ${
-                !notif.leida ? 'bg-green-50/30' : ''
+              key={notif.id}
+              onClick={() => !notif.isRead && markOneRead(notif.id)}
+              className={`group px-5 py-3.5 flex items-start gap-3 hover:bg-gray-50 transition-colors cursor-pointer ${
+                !notif.isRead ? 'bg-green-50/30' : ''
               }`}
             >
-              <div className={`p-2 rounded-xl shrink-0 ${bgMap[notif.tipo] || bgMap.info}`}>
-                {iconMap[notif.tipo] || iconMap.info}
+              <div className={`p-2 rounded-xl shrink-0 ${bgMap[notif.type] || bgMap.info}`}>
+                {iconMap[notif.type] || iconMap.info}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-sm leading-snug ${!notif.leida ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
-                  {notif.mensaje}
+                <p className={`text-sm leading-snug ${!notif.isRead ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                  {notif.message}
                 </p>
                 <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                   <FiClock className="w-3 h-3" />
-                  {timeAgo(notif.created_at)}
+                  {timeAgo(notif.createdAt)}
                 </p>
               </div>
-              {!notif.leida && (
-                <span className="mt-2 w-2 h-2 bg-[#407754] rounded-full shrink-0"></span>
-              )}
+              <div className="flex flex-col items-center gap-1.5 shrink-0">
+                <button
+                  onClick={(e) => deleteOne(e, notif.id)}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-400 cursor-pointer"
+                  title="Eliminar notificación"
+                >
+                  <FiTrash2 className="w-3.5 h-3.5" />
+                </button>
+                {!notif.isRead && (
+                  <span className="w-2 h-2 bg-[#407754] rounded-full"></span>
+                )}
+              </div>
             </div>
           ))
         )}
