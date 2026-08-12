@@ -73,8 +73,8 @@ export default function Reportes() {
         setShowExportMenu(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   const handleApplyFilters = () => {
@@ -242,8 +242,11 @@ export default function Reportes() {
     );
   }
 
-  // Areas list extracted from instructors
-  const areas = Array.from(new Set(instructores.map((i) => i.area).filter(Boolean)));
+  // Areas list extracted from instructors — normalize area to string
+  const areas = Array.from(new Set(instructores.map((i) => {
+    if (!i.area) return null;
+    return typeof i.area === 'object' ? i.area.nombre_area : i.area;
+  }).filter(Boolean)));
 
   // Prepare PieChart data
   const pieData = [

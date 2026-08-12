@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FiZap, FiSend, FiHelpCircle, FiClock, FiX, FiCpu } from 'react-icons/fi';
 import { toast } from 'sonner';
+import api from '../services/api';
 
 export default function AsistenteFAB() {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,9 +52,9 @@ export default function AsistenteFAB() {
     };
   }, [isOpen]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!inputVal.trim()) return;
+    if (!inputVal.trim() || isThinking) return;
 
     const userMessage = {
       id: Date.now(),
@@ -62,24 +63,23 @@ export default function AsistenteFAB() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
+    const currentInput = inputVal;
     setMessages((prev) => [...prev, userMessage]);
-    const query = inputVal.toLowerCase();
     setInputVal('');
     setIsThinking(true);
 
-    setTimeout(() => {
-      let replyText = 'Entiendo tu consulta. Como asistente STIMI, puedo informarte que Wilson Martínez y Diana Carolina Ruiz tienen reportes listos para tu firma.';
+    // Build historial for context (last 10 messages)
+    const historial = messages.slice(-10).map((m) => ({
+      rol: m.sender === 'user' ? 'user' : 'assistant',
+      contenido: m.text,
+    }));
 
-      if (query.includes('pendiente') || query.includes('revisión')) {
-        replyText = 'Actualmente hay 4 informes en estado "Pendiente de revisión": Wilson Martínez (GC), Diana Carolina Ruiz (GF) y Ana María Gómez tiene un informe de tipo GC rechazado con observaciones.';
-      } else if (query.includes('cumplimiento') || query.includes('porcentaje') || query.includes('tasa')) {
-        replyText = 'La tasa de cumplimiento general del período de Julio 2026 es del 80%. Carlos Mario Restrepo y Diana Carolina Ruiz lideran el cumplimiento con informes validados.';
-      } else if (query.includes('formato') || query.includes('gth') || query.includes('descargar')) {
-        replyText = 'Los formatos vigentes son el GTH-F-062 GC (para gestión contractual) y el Formato GF (para gestión financiera). Puedes descargarlos desde el botón correspondiente en tu panel de inicio.';
-      } else if (query.includes('recordatorio') || query.includes('alertar')) {
-        replyText = 'He detectado que Ana María Gómez y Wilson Martínez tienen informes pendientes de entrega o corrección. Puedes enviarles un recordatorio automático desde la sección de alertas en la vista de Inicio.';
-      }
-
+    try {
+      const response = await api.post('/webhooks/asistente-chat', {
+        mensaje: currentInput,
+        historial,
+      });
+      const replyText = response.data?.respuesta || 'No pude generar una respuesta. Por favor, intenta de nuevo.';
       setMessages((prev) => [
         ...prev,
         {
@@ -89,8 +89,20 @@ export default function AsistenteFAB() {
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
+    } catch (err) {
+      const errorMsg = err?.response?.data?.message || 'Error al conectar con el asistente. Verifica la conexión.';
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: 'assistant',
+          text: `⚠️ ${errorMsg}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    } finally {
       setIsThinking(false);
-    }, 1000);
+    }
   };
 
   const handleQuickQuestion = (question) => {

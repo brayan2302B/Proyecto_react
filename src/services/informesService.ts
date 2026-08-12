@@ -22,8 +22,8 @@ const mapApiReportToUI = (apiReport: any) => {
     id_version: v.id_version
   }));
 
-  // Sort versions by version number ascending for history visualization
-  versionsMapped.sort((a: any, b: any) => a.version - b.version);
+  // Sort versions by version number descending (newest first)
+  versionsMapped.sort((a: any, b: any) => b.version - a.version);
 
   const mesesNombres = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -35,7 +35,7 @@ const mapApiReportToUI = (apiReport: any) => {
   const mesNombre = periodo ? (mesesNombres[periodo.mes - 1] ?? 'Desconocido') : 'Desconocido';
   const periodoStr = periodo ? `${mesNombre} ${periodo.anio}` : '';
 
-  const lastVer = versionsMapped.length > 0 ? versionsMapped[versionsMapped.length - 1] : null;
+  const lastVer = versionsMapped.length > 0 ? versionsMapped[0] : null;
 
   const carpetaUrl = apiReport.usuario?.carpeta_drive_url 
     ? apiReport.usuario.carpeta_drive_url 
@@ -164,35 +164,59 @@ export const descargarPdf = async (id: number, nombreArchivo: string): Promise<v
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.setAttribute('download', nombreArchivo || `informe-${id}.pdf`);
+  // Use Content-Disposition header filename if available, otherwise use the provided name
+  const contentDisp: string = (response.headers as any)['content-disposition'] || '';
+  const match = contentDisp.match(/filename[^;=\n]*=(['"]?)([^'"\n]*)\1/);
+  const finalName = (match && match[2]) ? match[2].trim() : (nombreArchivo || `informe-${id}.pdf`);
+  link.setAttribute('download', finalName);
   document.body.appendChild(link);
   link.click();
   link.parentNode?.removeChild(link);
 };
 
 export const verPdf = async (id: number): Promise<void> => {
-  console.log(`>>> [DEBUG-FRONTEND] verPdf llamado con id: ${id}`);
   try {
     const response = await api.get(`/informes/${id}/view`, {
       responseType: 'blob',
     });
-    console.log(`>>> [DEBUG-FRONTEND] verPdf respuesta recibida | status: ${response.status} | content-type: ${response.headers['content-type']} | size: ${response.data?.size}`);
     const blob = new Blob([response.data], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blob);
     const newWindow = window.open(url, '_blank');
     if (!newWindow) {
-      throw new Error('El navegador bloqueó la ventana emergente. Permite popups para este sitio.');
+      throw new Error('El navegador bloquó la ventana emergente. Permite popups para este sitio.');
     }
   } catch (err: any) {
     // When responseType is 'blob', error response data is a Blob — need to parse it
     if (err?.response?.data instanceof Blob) {
-      console.log(`>>> [DEBUG-FRONTEND] verPdf error blob detectado, parseando...`);
       const text = await err.response.data.text();
-      console.log(`>>> [DEBUG-FRONTEND] verPdf error body raw:`, text);
       try {
         const parsed = JSON.parse(text);
-        err.response.data = parsed; // Replace blob with parsed JSON for upstream handlers
+        err.response.data = parsed;
       } catch { /* Not JSON, leave as-is */ }
+    }
+    throw err;
+  }
+};
+
+/** Abre en nueva pestaña el PDF de una versión específica (por id_version) */
+export const verPdfVersion = async (versionId: number): Promise<void> => {
+  try {
+    const response = await api.get(`/versiones/${versionId}/view`, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const newWindow = window.open(url, '_blank');
+    if (!newWindow) {
+      throw new Error('El navegador bloquó la ventana emergente. Permite popups para este sitio.');
+    }
+  } catch (err: any) {
+    if (err?.response?.data instanceof Blob) {
+      const text = await err.response.data.text();
+      try {
+        const parsed = JSON.parse(text);
+        err.response.data = parsed;
+      } catch { /* Not JSON */ }
     }
     throw err;
   }
@@ -221,6 +245,7 @@ export const informesService = {
   updateEstadoInforme,
   descargarPdf,
   verPdf,
+  verPdfVersion,
   getPdfGcJson,
   descartarUltimaVersion
 };

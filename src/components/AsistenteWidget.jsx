@@ -26,11 +26,14 @@ const QUICK_RESPONSES = {
   },
 };
 
-function ModalConfirmacion({ archivo, onConfirmar, onCancelar }) {
+function ModalConfirmacion({ archivo, onConfirmar, onCancelar, periodoDefault }) {
   const anioActual = new Date().getFullYear();
+  // Use the active period from context if provided, otherwise default to current month
+  const defaultMes = periodoDefault ? periodoDefault.split(' ')[0] : MESES[new Date().getMonth()];
+  const defaultAnio = periodoDefault ? (periodoDefault.split(' ')[1] || String(anioActual)) : String(anioActual);
   const [tipo, setTipo] = useState('GC');
-  const [mes, setMes] = useState(MESES[new Date().getMonth()]);
-  const [anio, setAnio] = useState(String(anioActual));
+  const [mes, setMes] = useState(defaultMes);
+  const [anio, setAnio] = useState(defaultAnio);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
@@ -257,11 +260,20 @@ export default function AsistenteWidget() {
         estado: resultado.estado,
         idInforme: resultado.id_informe,
       }]);
-    } catch {
+    } catch (err) {
+      // Extraer mensaje de error real del servidor
+      const errMsg =
+        err?.response?.data?.message ||
+        (Array.isArray(err?.response?.data?.message)
+          ? err.response.data.message.join(', ')
+          : null) ||
+        err?.message ||
+        'Error desconocido';
+      console.error('[AsistenteWidget] Error al subir archivo:', err?.response?.data ?? err);
       setMessages(prev => [...prev, {
         id: Date.now() + 2,
         sender: 'ai',
-        text: '⚠️ Error al analizar el archivo. Intenta nuevamente.',
+        text: `⚠️ Error al analizar el archivo: ${errMsg}`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isError: true,
         tipo: 'texto',

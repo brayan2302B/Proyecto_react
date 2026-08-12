@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { informesService, verPdf } from '../../services/informesService';
+import { informesService, verPdf, verPdfVersion } from '../../services/informesService';
 import { instructoresService } from '../../services/instructoresService';
 import { 
   FiFolder, 
@@ -474,7 +474,7 @@ export default function RevisionInformes() {
                                                       onClick={async () => {
                                                         const toastId = toast.loading('Abriendo PDF versión...');
                                                         try {
-                                                          await verPdf(ver.id);
+                                                          await verPdfVersion(ver.id_version);
                                                           toast.dismiss(toastId);
                                                         } catch (err) {
                                                           const status = err?.response?.status || 'sin status';
