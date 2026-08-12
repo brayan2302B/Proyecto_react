@@ -61,11 +61,14 @@ export const enviarArchivoInforme = async (
     '/webhooks/chat/upload',
     formData,
     {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
       // Timeout extendido: OpenAI puede tardar hasta 60s en analizar un PDF grande
       timeout: 90000,
+      headers: {
+        // Eliminar el Content-Type fijo de la instancia axios para que el browser
+        // establezca automáticamente 'multipart/form-data; boundary=...' al detectar FormData.
+        // Sin esto, Multer no reconoce el archivo y devuelve 400.
+        'Content-Type': undefined,
+      },
     },
   );
   return response.data;

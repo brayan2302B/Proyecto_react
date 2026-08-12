@@ -6,7 +6,8 @@ import {
   FiKey, 
   FiCpu, 
   FiSettings,
-  FiInfo
+  FiInfo,
+  FiMonitor
 } from 'react-icons/fi';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -31,6 +32,9 @@ export default function Configuracion() {
   const [notifCorreo, setNotifCorreo] = useState(true);
   const [firmaData, setFirmaData] = useState(null); // Estado para la firma final
   const [loadingSettings, setLoadingSettings] = useState(true);
+
+  const [darkMode, setDarkMode] = useState(localStorage.getItem('stimi_dark_mode') === 'true');
+  const [idioma, setIdioma] = useState(localStorage.getItem('stimi_idioma') || 'es');
 
   // Cargar preferencias desde el backend al montar
   useEffect(() => {
@@ -72,6 +76,14 @@ export default function Configuracion() {
         fechaLimite: `${fechaLimite}T23:59:00`,
         habilitado: !bloquearEnvios
       });
+      // Persistir apariencia
+      localStorage.setItem('stimi_dark_mode', darkMode);
+      localStorage.setItem('stimi_idioma', idioma);
+      if (darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
       // Persistir preferencias en backend
       await api.put('/personas/me/settings', {
         notif_pendientes: notifPendientes,
@@ -247,6 +259,46 @@ export default function Configuracion() {
               Bloquear envíos extemporáneos
             </label>
             <span className="text-[9px] text-gray-400 block pl-7">Impide el envío una vez superada la fecha límite ordinaria</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Apariencia e Idioma Card */}
+      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
+          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+            <FiMonitor className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">Apariencia e Idioma</h3>
+            <p className="text-xs text-gray-400">Personaliza la interfaz del sistema para el coordinador</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <SwitchItem 
+            label="Modo Oscuro (Dark Mode)"
+            desc="Cambia la apariencia del sistema a colores oscuros"
+            checked={darkMode}
+            onChange={(val) => {
+              setDarkMode(val);
+              if (val) {
+                document.documentElement.classList.add('dark');
+              } else {
+                document.documentElement.classList.remove('dark');
+              }
+            }}
+          />
+          <div className="flex flex-col gap-1 max-w-sm mt-4">
+            <label className="text-[10px] font-bold text-gray-500 uppercase">Idioma del Sistema</label>
+            <select
+              value={idioma}
+              onChange={(e) => setIdioma(e.target.value)}
+              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white transition-all cursor-pointer"
+            >
+              <option value="es">Español (Colombia)</option>
+              <option value="en">English (US)</option>
+            </select>
           </div>
         </div>
       </div>

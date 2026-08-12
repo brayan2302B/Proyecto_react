@@ -15,7 +15,7 @@ import {
   FiDownload,
   FiCornerDownRight
 } from 'react-icons/fi';
-import { getInformes, getHistorial, addVersion, descargarPdf, verPdf, updateEstadoInforme, descartarUltimaVersion } from '../../services/informesService';
+import { getInformes, getHistorial, addVersion, descargarPdf, verPdf, verPdfVersion, updateEstadoInforme, descartarUltimaVersion } from '../../services/informesService';
 import { toast } from 'sonner';
 
 // Month names defined at module scope so they are accessible everywhere
@@ -524,7 +524,7 @@ const handleDescartarBorrador = async (reportId) => {
                                                 onClick={async () => {
                                                   const toastId = toast.loading('Abriendo versión del PDF...');
                                                   try {
-                                                    await verPdf(file.id_informe);
+                                                    await verPdfVersion(ver.id_version);
                                                     toast.dismiss(toastId);
                                                   } catch (err) {
                                                     const status = err?.response?.status || 'sin status';
