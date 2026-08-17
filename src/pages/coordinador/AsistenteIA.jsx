@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fi';
 import { toast } from 'sonner';
 import PageContainer from '../../components/PageContainer';
+import { enviarMensajeCoordinador } from '../../services/coordinadorService';
 
 export default function AsistenteIA() {
   const [messages, setMessages] = useState([
@@ -33,9 +34,9 @@ export default function AsistenteIA() {
     scrollToBottom();
   }, [messages, isThinking]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!inputVal.trim()) return;
+    if (!inputVal.trim() || isThinking) return;
 
     const userMessage = {
       id: Date.now(),
@@ -45,35 +46,35 @@ export default function AsistenteIA() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    const query = inputVal.toLowerCase();
+    const mensajeEnviado = inputVal;
     setInputVal('');
     setIsThinking(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      let replyText = 'Entiendo tu consulta. Sin embargo, en esta fase de prototipo, mis respuestas son simuladas. ¿Hay algo específico sobre los informes que quieras consultar?';
-
-      if (query.includes('pendiente') || query.includes('revisión')) {
-        replyText = 'Actualmente hay 4 informes en estado "Pendiente de revisión": Wilson Martínez (GC), Diana Carolina Ruiz (GF) y Ana María Gómez tiene un informe de tipo GC rechazado con observaciones.';
-      } else if (query.includes('cumplimiento') || query.includes('porcentaje') || query.includes('tasa')) {
-        replyText = 'La tasa de cumplimiento general del período de Julio 2026 es del 80%. Carlos Mario Restrepo y Diana Carolina Ruiz lideran el cumplimiento con informes validados.';
-      } else if (query.includes('formato') || query.includes('gth') || query.includes('descargar')) {
-        replyText = 'Los formatos vigentes son el GTH-F-062 GC (para gestión contractual) y el Formato GF (para gestión financiera). Puedes descargarlos desde el botón correspondiente en tu panel de inicio.';
-      } else if (query.includes('recordatorio') || query.includes('alertar')) {
-        replyText = 'He detectado que Ana María Gómez y Wilson Martínez tienen informes pendientes de entrega o corrección. Puedes enviarles un recordatorio automático desde la sección de alertas en la vista de Inicio.';
-      }
-
+    try {
+      const data = await enviarMensajeCoordinador(mensajeEnviado);
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now() + 1,
           sender: 'assistant',
-          text: replyText,
+          text: data.respuesta,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
+    } catch (err) {
+      toast.error('No se pudo obtener respuesta del asistente. Intenta de nuevo.');
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: 'assistant',
+          text: 'Lo siento, no pude conectarme con el asistente en este momento. Por favor, intenta de nuevo.',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }
+      ]);
+    } finally {
       setIsThinking(false);
-    }, 1200);
+    }
   };
 
   const handleQuickQuestion = (question) => {

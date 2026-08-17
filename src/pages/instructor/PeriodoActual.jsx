@@ -203,7 +203,7 @@ export default function PeriodoActual() {
             const report = getJulioReport(type);
             const versions = report ? report.versiones : [];
             const hasVersions = versions.length > 0;
-            const lastVersion = hasVersions ? versions[versions.length - 1] : null;
+            const lastVersion = hasVersions ? versions[0] : null;
             const currentStatus = lastVersion ? lastVersion.estado : 'No cargado';
  
             return (

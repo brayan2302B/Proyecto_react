@@ -2,9 +2,8 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  maxBodyLength: 60 * 1024 * 1024, // 60 MB para soportar subida de PDFs
+  maxContentLength: 60 * 1024 * 1024,
 });
 
 // ── Request Interceptor ───────────────────────────────────────────────────────
