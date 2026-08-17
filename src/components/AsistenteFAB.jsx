@@ -75,9 +75,8 @@ export default function AsistenteFAB() {
     }));
 
     try {
-      const response = await api.post('/webhooks/asistente-chat', {
+      const response = await api.post('/coordinador/chat', {
         mensaje: currentInput,
-        historial,
       });
       const replyText = response.data?.respuesta || 'No pude generar una respuesta. Por favor, intenta de nuevo.';
       setMessages((prev) => [
