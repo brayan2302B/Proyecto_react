@@ -20,6 +20,7 @@ export default function PageContainer({ children, maxWidth = "max-w-7xl", classN
         ${maxWidth} mx-auto
         space-y-8
         animate-in fade-in duration-500
+        text-gray-900 dark:text-gray-100
         ${className}
       `.trim()}
     >
@@ -27,3 +28,4 @@ export default function PageContainer({ children, maxWidth = "max-w-7xl", classN
     </div>
   );
 }
+

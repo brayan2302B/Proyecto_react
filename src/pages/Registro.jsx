@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { FiInfo } from 'react-icons/fi';
 import api from '../services/api';
@@ -9,6 +10,7 @@ import logoSena from '../assets/logo-sena.png';
 
 export default function Registro() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     nombreCompleto: '',
     email: '',
@@ -69,7 +71,7 @@ export default function Registro() {
     }
 
     setLoading(true);
-    const toastId = toast.loading('Procesando registro...');
+    const toastId = toast.loading(t('registro.processing', 'Procesando registro...'));
 
     try {
       const payload = {
@@ -123,17 +125,17 @@ export default function Registro() {
         </div>
 
         <h2 className="text-2xl font-extrabold text-white mb-1 tracking-tight">
-          Crear Cuenta
+          {t('registro.title', 'Crear Cuenta')}
         </h2>
         <p className="text-gray-200 text-sm mb-6 font-medium">
-          Regístrate para solicitar acceso al Sistema STIMI.
+          {t('registro.subtitle', 'Regístrate para solicitar acceso al Sistema STIMI.')}
         </p>
 
         {/* Warning notification banner in yellow */}
         <div className="flex gap-2.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 mb-6 text-left">
           <FiInfo className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
           <p className="text-xs font-medium text-amber-200">
-            El área de formación y rol serán asignados por el coordinador una vez aprobada tu cuenta.
+            {t('registro.warning', 'El área de formación y rol serán asignados por el coordinador una vez aprobada tu cuenta.')}
           </p>
         </div>
 
@@ -142,7 +144,7 @@ export default function Registro() {
           {/* Nombre Completo */}
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-white block">
-              Nombre Completo
+              {t('registro.fullName', 'Nombre Completo')}
             </label>
             <input
               type="text"
@@ -154,8 +156,8 @@ export default function Registro() {
               className={`w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border ${
                 errors.nombreCompleto 
                   ? 'border-red-500' 
-                  : 'border-white/20 focus:border-sena-green'
-              } focus:outline-none focus:ring-4 focus:ring-sena-green/30 text-sm`}
+                  : 'border-white/20 focus:border-[#407754]'
+              } focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm`}
             />
             {errors.nombreCompleto && (
               <p className="text-xs font-medium text-red-400 pt-1">{errors.nombreCompleto}</p>
@@ -165,7 +167,7 @@ export default function Registro() {
           {/* Correo Electrónico */}
           <div className="space-y-1.5">
             <label className="text-sm font-bold text-white block">
-              Correo Electrónico
+              {t('registro.email', 'Correo Electrónico')}
             </label>
             <input
               type="email"
@@ -177,8 +179,8 @@ export default function Registro() {
               className={`w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border ${
                 errors.email 
                   ? 'border-red-500' 
-                  : 'border-white/20 focus:border-sena-green'
-              } focus:outline-none focus:ring-4 focus:ring-sena-green/30 text-sm`}
+                  : 'border-white/20 focus:border-[#407754]'
+              } focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm`}
             />
             {errors.email && (
               <p className="text-xs font-medium text-red-400 pt-1">{errors.email}</p>
@@ -189,14 +191,14 @@ export default function Registro() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-white block">
-                Tipo de Documento
+                {t('registro.docType', 'Tipo de Documento')}
               </label>
               <select
                 name="tipoDocumento"
                 value={formData.tipoDocumento}
                 onChange={handleChange}
                 disabled={loading}
-                className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white border border-white/20 focus:border-sena-green focus:outline-none focus:ring-4 focus:ring-sena-green/30 text-sm appearance-none cursor-pointer"
+                className="w-full px-4 py-3 rounded-2xl bg-white/10 text-white border border-white/20 focus:border-[#407754] focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm appearance-none cursor-pointer"
               >
                 <option value="CC" className="bg-slate-900 text-white">Cédula de Ciudadanía</option>
                 <option value="CE" className="bg-slate-900 text-white">Cédula de Extranjería</option>
@@ -206,7 +208,7 @@ export default function Registro() {
 
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-white block">
-                Número de Documento
+                {t('registro.docNumber', 'Número de Documento')}
               </label>
               <input
                 type="text"
@@ -218,8 +220,8 @@ export default function Registro() {
                 className={`w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border ${
                   errors.numeroDocumento 
                     ? 'border-red-500' 
-                    : 'border-white/20 focus:border-sena-green'
-                } focus:outline-none focus:ring-4 focus:ring-sena-green/30 text-sm`}
+                    : 'border-white/20 focus:border-[#407754]'
+                } focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm`}
               />
               {errors.numeroDocumento && (
                 <p className="text-xs font-medium text-red-400 pt-1">{errors.numeroDocumento}</p>
@@ -231,7 +233,7 @@ export default function Registro() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-white block">
-                Contraseña
+                {t('registro.password', 'Contraseña')}
               </label>
               <input
                 type="password"
@@ -243,8 +245,8 @@ export default function Registro() {
                 className={`w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border ${
                   errors.password 
                     ? 'border-red-500' 
-                    : 'border-white/20 focus:border-sena-green'
-                } focus:outline-none focus:ring-4 focus:ring-sena-green/30 text-sm`}
+                    : 'border-white/20 focus:border-[#407754]'
+                } focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm`}
               />
               {errors.password && (
                 <p className="text-xs font-medium text-red-400 pt-1">{errors.password}</p>
@@ -253,7 +255,7 @@ export default function Registro() {
 
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-white block">
-                Confirmar Contraseña
+                {t('registro.confirmPassword', 'Confirmar Contraseña')}
               </label>
               <input
                 type="password"
@@ -265,8 +267,8 @@ export default function Registro() {
                 className={`w-full px-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border ${
                   errors.confirmPassword 
                     ? 'border-red-500' 
-                    : 'border-white/20 focus:border-sena-green'
-                } focus:outline-none focus:ring-4 focus:ring-sena-green/30 text-sm`}
+                    : 'border-white/20 focus:border-[#407754]'
+                } focus:outline-none focus:ring-4 focus:ring-[#407754]/30 text-sm`}
               />
               {errors.confirmPassword && (
                 <p className="text-xs font-medium text-red-400 pt-1">{errors.confirmPassword}</p>
@@ -278,12 +280,12 @@ export default function Registro() {
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-xs space-y-1">
             <div className="flex justify-between">
               <span className="text-gray-300">Regional:</span>
-              <span className="font-semibold text-white">Huila regional</span>
+              <span className="font-semibold text-white">{t('common.regional', 'Huila regional')}</span>
             </div>
             <div className="flex justify-between text-right mt-1">
               <span className="text-gray-300">Centro de Formación:</span>
               <span className="font-semibold text-white max-w-[200px] truncate" title="Centro de Gestión y Desarrollo Sostenible Surcolombiano">
-                Centro de Gestión y Desarrollo Sostenible Surcolombiano
+                {t('common.centro', 'Centro de Gestión y Desarrollo Sostenible Surcolombiano')}
               </span>
             </div>
           </div>
@@ -300,10 +302,10 @@ export default function Registro() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span>Procesando...</span>
+                <span>{t('registro.processing', 'Procesando...')}</span>
               </>
             ) : (
-              <span>Registrarse</span>
+              <span>{t('registro.registerButton', 'Registrarse')}</span>
             )}
           </button>
         </form>
@@ -311,12 +313,12 @@ export default function Registro() {
         {/* Back Link */}
         <div className="mt-6 pt-5 border-t border-white/10 text-center">
           <p className="text-xs text-gray-300">
-            ¿Ya tienes cuenta?{' '}
+            {t('registro.hasAccount', '¿Ya tienes cuenta?')}{' '}
             <Link
               to="/login"
               className="font-bold text-[#4CAF50] hover:underline ml-1"
             >
-              Iniciar sesión
+              {t('registro.loginLink', 'Iniciar sesión')}
             </Link>
           </p>
         </div>

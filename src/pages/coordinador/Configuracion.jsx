@@ -10,6 +10,8 @@ import {
   FiMonitor
 } from 'react-icons/fi';
 import { toast } from 'sonner';
+import { useTheme } from '../../hooks/useTheme';
+import { useTranslation } from 'react-i18next';
 import api from '../../services/api';
 import { usePeriodo } from '../../components/PeriodoContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -19,6 +21,8 @@ import FirmaDigitalManager from '../../components/FirmaDigitalManager';
 
 export default function Configuracion() {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const { t, i18n } = useTranslation();
   const { periodoInfo, updatePeriodo } = usePeriodo();
   const location = useLocation();
   
@@ -32,9 +36,6 @@ export default function Configuracion() {
   const [notifCorreo, setNotifCorreo] = useState(true);
   const [firmaData, setFirmaData] = useState(null); // Estado para la firma final
   const [loadingSettings, setLoadingSettings] = useState(true);
-
-  const [darkMode, setDarkMode] = useState(localStorage.getItem('stimi_dark_mode') === 'true');
-  const [idioma, setIdioma] = useState(localStorage.getItem('stimi_idioma') || 'es');
 
   // Cargar preferencias desde el backend al montar
   useEffect(() => {
@@ -76,14 +77,7 @@ export default function Configuracion() {
         fechaLimite: `${fechaLimite}T23:59:00`,
         habilitado: !bloquearEnvios
       });
-      // Persistir apariencia
-      localStorage.setItem('stimi_dark_mode', darkMode);
-      localStorage.setItem('stimi_idioma', idioma);
-      if (darkMode) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+
       // Persistir preferencias en backend
       await api.put('/personas/me/settings', {
         notif_pendientes: notifPendientes,
@@ -91,7 +85,7 @@ export default function Configuracion() {
         notif_aprobacion: notifAprobacion,
         notif_correo: notifCorreo,
       });
-      toast.success('Configuración guardada correctamente');
+      toast.success(t('configuracion.saveSuccess', 'Configuración guardada correctamente'));
     } catch (err) {
       console.error('Error al guardar configuración:', err);
       toast.error('No se pudo guardar la configuración');
@@ -146,10 +140,10 @@ export default function Configuracion() {
 
   // Switch wrapper component for clean render
   const SwitchItem = ({ label, desc, checked, onChange }) => (
-    <div className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+    <div className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
       <div className="space-y-0.5">
-        <span className="text-xs font-bold text-gray-700 block">{label}</span>
-        <span className="text-[10px] text-gray-400 block leading-tight">{desc}</span>
+        <span className="text-xs font-bold text-gray-700 dark:text-gray-200 block">{label}</span>
+        <span className="text-[10px] text-gray-400 dark:text-gray-500 block leading-tight">{desc}</span>
       </div>
       <button
         type="button"
@@ -157,7 +151,7 @@ export default function Configuracion() {
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#407754] focus:ring-offset-2 cursor-pointer ${
-          checked ? 'bg-[#407754]' : 'bg-gray-200'
+          checked ? 'bg-[#407754]' : 'bg-gray-200 dark:bg-gray-700'
         }`}
       >
         <span
@@ -172,14 +166,14 @@ export default function Configuracion() {
   const renderGeneralTab = () => (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Notifications Card */}
-      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-4">
-          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 dark:border-gray-700 mb-4">
+          <div className="p-3 bg-green-50 dark:bg-green-900/30 text-[#407754] dark:text-emerald-400 rounded-xl">
             <FiBell className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900">Alertas y Notificaciones</h3>
-            <p className="text-xs text-gray-400">Parámetros generales de alerta del panel</p>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{t('configuracion.notificationsTitle', 'Alertas y Notificaciones')}</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{t('configuracion.notificationsSubtitle', 'Parámetros generales de alerta del panel')}</p>
           </div>
         </div>
 
@@ -212,24 +206,24 @@ export default function Configuracion() {
       </div>
 
       {/* Períodos de Carga Card */}
-      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
-          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 dark:border-gray-700 mb-6">
+          <div className="p-3 bg-green-50 dark:bg-green-900/30 text-[#407754] dark:text-emerald-400 rounded-xl">
             <FiCalendar className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900">Períodos de Carga y Plazos de Entrega</h3>
-            <p className="text-xs text-gray-400">Configuración del mes activo y fechas límite de carga de informes</p>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Períodos de Carga y Plazos de Entrega</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Configuración del mes activo y fechas límite de carga de informes</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase">Mes Activo de Presentación</label>
+            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Mes Activo de Presentación</label>
             <select
               value={periodoActivo}
               onChange={(e) => setPeriodoActivo(e.target.value)}
-              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white transition-all cursor-pointer"
+              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white dark:focus:bg-gray-700 transition-all cursor-pointer"
             >
               <option value="Julio 2026">Julio 2026</option>
               <option value="Agosto 2026">Agosto 2026</option>
@@ -239,17 +233,17 @@ export default function Configuracion() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-500 uppercase">Fecha Límite Ordinaria</label>
+            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Fecha Límite Ordinaria</label>
             <input
               type="date"
               value={fechaLimite}
               onChange={(e) => setFechaLimite(e.target.value)}
-              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white transition-all cursor-pointer"
+              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white dark:focus:bg-gray-700 transition-all cursor-pointer"
             />
           </div>
 
           <div className="flex flex-col gap-1 justify-center pt-2 md:pt-4">
-            <label className="flex items-center gap-2.5 text-xs font-bold text-gray-700 cursor-pointer">
+            <label className="flex items-center gap-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer">
               <input
                 type="checkbox"
                 checked={bloquearEnvios}
@@ -258,52 +252,46 @@ export default function Configuracion() {
               />
               Bloquear envíos extemporáneos
             </label>
-            <span className="text-[9px] text-gray-400 block pl-7">Impide el envío una vez superada la fecha límite ordinaria</span>
+            <span className="text-[9px] text-gray-400 dark:text-gray-500 block pl-7">Impide el envío una vez superada la fecha límite ordinaria</span>
           </div>
         </div>
       </div>
 
       {/* Apariencia e Idioma Card */}
-      <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
-          <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 pb-4 border-b border-gray-100 dark:border-gray-700 mb-6">
+          <div className="p-3 bg-green-50 dark:bg-green-900/30 text-[#407754] dark:text-emerald-400 rounded-xl">
             <FiMonitor className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900">Apariencia e Idioma</h3>
-            <p className="text-xs text-gray-400">Personaliza la interfaz del sistema para el coordinador</p>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{t('configuracion.appearanceTitle', 'Apariencia e Idioma')}</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{t('configuracion.appearanceSubtitle', 'Personaliza la interfaz del sistema para el coordinador')}</p>
           </div>
         </div>
 
         <div className="space-y-4">
           <SwitchItem 
-            label="Modo Oscuro (Dark Mode)"
+            label={t('sidebar.themeDark', 'Modo Oscuro')}
             desc="Cambia la apariencia del sistema a colores oscuros"
-            checked={darkMode}
-            onChange={(val) => {
-              setDarkMode(val);
-              if (val) {
-                document.documentElement.classList.add('dark');
-              } else {
-                document.documentElement.classList.remove('dark');
-              }
-            }}
+            checked={theme === 'dark'}
+            onChange={(val) => setTheme(val ? 'dark' : 'light')}
           />
           <div className="flex flex-col gap-1 max-w-sm mt-4">
-            <label className="text-[10px] font-bold text-gray-500 uppercase">Idioma del Sistema</label>
+            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('configuracion.preferredLanguage', 'Idioma del Sistema')}</label>
             <select
-              value={idioma}
-              onChange={(e) => setIdioma(e.target.value)}
-              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white transition-all cursor-pointer"
+              value={i18n.language ? i18n.language.substring(0, 2) : 'es'}
+              onChange={(e) => i18n.changeLanguage(e.target.value)}
+              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white dark:focus:bg-gray-700 transition-all cursor-pointer"
             >
-              <option value="es">Español (Colombia)</option>
-              <option value="en">English (US)</option>
+              <option value="es">{t('configuracion.spanish', 'Español (Colombia)')}</option>
+              <option value="en">{t('configuracion.english', 'English (US)')}</option>
             </select>
           </div>
         </div>
       </div>
     </div>
   );
+
 
   const renderFirmaTab = () => (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -328,31 +316,31 @@ export default function Configuracion() {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
         {/* Info Card */}
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-          <div className="flex items-center gap-3 pb-4 border-b border-gray-100 mb-6">
-            <div className="p-3 bg-green-50 text-[#407754] rounded-xl">
+        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl p-6 shadow-sm">
+          <div className="flex items-center gap-3 pb-4 border-b border-gray-100 dark:border-gray-700 mb-6">
+            <div className="p-3 bg-green-50 dark:bg-green-900/30 text-[#407754] dark:text-emerald-400 rounded-xl">
               <FiCpu className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-900">Información del Sistema</h3>
-              <p className="text-xs text-gray-400">Detalles de despliegue y ubicación del usuario</p>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{t('configuracion.systemInfo', 'Información del Sistema')}</h3>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{t('configuracion.systemInfoDesc', 'Detalles de despliegue y ubicación del usuario')}</p>
             </div>
           </div>
 
           <div className="space-y-3.5 max-w-xl">
             {infoItems.map((item) => (
-              <div key={item.label} className="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
-                <span className="text-xs text-gray-500 font-semibold">{item.label}</span>
-                <span className="text-xs font-extrabold text-gray-800 text-right">{item.value}</span>
+              <div key={item.label} className="flex justify-between items-center py-1.5 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-semibold">{item.label}</span>
+                <span className="text-xs font-extrabold text-gray-800 dark:text-gray-200 text-right">{item.value}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Acerca de STIMI Card */}
-        <div className="bg-blue-50/70 border border-blue-100 rounded-3xl p-6 shadow-sm">
-          <h4 className="text-sm font-extrabold text-blue-900 mb-2">Acerca de STIMI</h4>
-          <p className="text-xs text-blue-800 leading-relaxed max-w-2xl mb-4">
+        <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-3xl p-6 shadow-sm">
+          <h4 className="text-sm font-extrabold text-blue-900 dark:text-blue-300 mb-2">Acerca de STIMI</h4>
+          <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed max-w-2xl mb-4">
             STIMI (Sistema de Trazabilidad Mensual de Informes) es la plataforma oficial de seguimiento académico y contractual para instructores de la Regional Antioquia.
           </p>
           <div className="flex gap-2">
@@ -362,16 +350,16 @@ export default function Configuracion() {
         </div>
 
         {/* Danger Zone Card */}
-        <div className="bg-red-50/50 border border-red-200 rounded-3xl p-6 shadow-sm">
-          <h4 className="text-sm font-extrabold text-red-700 mb-1">Zona de Peligro</h4>
-          <p className="text-[10px] text-gray-500 mb-4">Acciones sobre datos locales de tu sesión</p>
+        <div className="bg-red-50/50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-3xl p-6 shadow-sm">
+          <h4 className="text-sm font-extrabold text-red-700 dark:text-red-400 mb-1">{t('configuracion.dangerZone', 'Zona de Peligro')}</h4>
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-4">{t('configuracion.dangerZoneDesc', 'Acciones sobre datos locales de tu sesión')}</p>
           <button
             type="button"
             id="btn-clear-cache-coordinador"
             onClick={handleClearCache}
-            className="px-4 py-2 border border-red-300 hover:bg-red-100 bg-red-50 text-red-600 text-xs font-bold rounded-xl transition-all cursor-pointer"
+            className="px-4 py-2 border border-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
           >
-            🗑️ Eliminar caché local del navegador
+            🗑️ {t('configuracion.clearCache', 'Eliminar caché local del navegador')}
           </button>
         </div>
       </div>
@@ -381,8 +369,8 @@ export default function Configuracion() {
   return (
     <PageContainer maxWidth="max-w-5xl">
       <SettingsTabs
-        title="Configuración del Sistema"
-        subtitle="Personaliza el sistema de coordinación de SITMI"
+        title={t('configuracion.title', 'Configuración del Sistema')}
+        subtitle={t('configuracion.subtitle', 'Personaliza el sistema de coordinación de SITMI')}
         saving={saving}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -395,3 +383,4 @@ export default function Configuracion() {
     </PageContainer>
   );
 }
+
