@@ -45,6 +45,7 @@ const mapApiReportToUI = (apiReport: any) => {
     id: apiReport.id_informe,
     instructorId: apiReport.usuario?.id_usuario?.toString(),
     instructorNombre: apiReport.usuario?.nombre_completo ?? '',
+    instructorCorreo: apiReport.usuario?.correo ?? '',
     periodo: periodoStr,
     mes: mesNombre,
     archivoNombre: lastVer ? lastVer.archivo : 'Sin archivos',
@@ -61,6 +62,7 @@ const mapApiReportToUI = (apiReport: any) => {
 
 export const getInformes = async (): Promise<any[]> => {
   const response = await api.get<any[]>('/informes');
+  console.log('>>> [DEBUG-API] Raw /informes response:', JSON.stringify(response.data, null, 2));
   return response.data.map(mapApiReportToUI);
 };
 

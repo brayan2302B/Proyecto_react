@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { FiInfo } from 'react-icons/fi';
+import { FiInfo, FiX } from 'react-icons/fi';
 import api from '../services/api';
 import axios from 'axios';
 import fondoCampus from '../assets/Fondo.jpg.jpeg';
@@ -15,10 +15,12 @@ export default function Registro() {
     tipoDocumento: 'CC',
     numeroDocumento: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    aceptaTerminos: false
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
 
   const validate = () => {
     const tempErrors = {};
@@ -48,15 +50,19 @@ export default function Registro() {
       tempErrors.confirmPassword = 'Las contraseñas no coinciden';
     }
 
+    if (!formData.aceptaTerminos) {
+      tempErrors.aceptaTerminos = 'Debe aceptar la política de tratamiento de datos';
+    }
+
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -64,7 +70,7 @@ export default function Registro() {
     e.preventDefault();
 
     if (!validate()) {
-      toast.error('Por favor, corrige los errores del formulario');
+      toast.error('Por favor, corrige los errores del formulario o acepta los términos');
       return;
     }
 
@@ -78,7 +84,8 @@ export default function Registro() {
         tipoDocumento: formData.tipoDocumento,
         numeroDocumento: formData.numeroDocumento,
         contrasena: formData.password,
-        confirmarContrasena: formData.confirmPassword
+        confirmarContrasena: formData.confirmPassword,
+        aceptaTerminos: formData.aceptaTerminos
       };
 
       const response = await api.post('/personas', payload);
@@ -288,11 +295,38 @@ export default function Registro() {
             </div>
           </div>
 
+          {/* Consent Checkbox */}
+          <div className="space-y-1">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none py-1">
+              <input
+                type="checkbox"
+                name="aceptaTerminos"
+                checked={formData.aceptaTerminos}
+                onChange={handleChange}
+                disabled={loading}
+                className="mt-1 w-4 h-4 rounded-md border-white/20 bg-white/10 text-sena-green focus:ring-sena-green focus:ring-offset-0 focus:outline-none cursor-pointer"
+              />
+              <span className="text-xs text-gray-200 leading-normal">
+                Autorizo el uso y tratamiento de mis datos personales conforme a la{' '}
+                <button
+                  type="button"
+                  onClick={() => setIsPolicyModalOpen(true)}
+                  className="text-sena-green hover:text-sena-green-hover font-bold underline align-baseline inline p-0 bg-transparent border-none cursor-pointer"
+                >
+                  política de tratamiento de datos
+                </button>.
+              </span>
+            </label>
+            {errors.aceptaTerminos && (
+              <p className="text-xs font-medium text-red-400 pt-0.5 pl-6">{errors.aceptaTerminos}</p>
+            )}
+          </div>
+
           {/* Register Button */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-3 px-4 bg-[#4CAF50] hover:bg-[#43A047] disabled:bg-gray-700 text-white rounded-2xl font-bold text-sm shadow-lg transition-all duration-250 cursor-pointer flex items-center justify-center gap-2 hover:-translate-y-0.5"
+            disabled={loading || !formData.aceptaTerminos}
+            className="w-full py-3 px-4 bg-[#4CAF50] hover:bg-[#43A047] disabled:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-sm shadow-lg transition-all duration-250 cursor-pointer flex items-center justify-center gap-2 hover:-translate-y-0.5"
           >
             {loading ? (
               <>
@@ -322,6 +356,79 @@ export default function Registro() {
         </div>
 
       </div>
+
+      {/* Policy Modal Overlay */}
+      {isPolicyModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsPolicyModalOpen(false)}></div>
+          
+          <div className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-xl max-h-[85vh] overflow-hidden shadow-2xl z-10 animate-in zoom-in-95 duration-200 relative flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-white/10 flex items-center justify-between">
+              <h3 className="text-lg font-black text-white">Política de Tratamiento de Datos Personales</h3>
+              <button 
+                onClick={() => setIsPolicyModalOpen(false)} 
+                className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-colors"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable body content */}
+            <div className="p-6 overflow-y-auto space-y-4 text-xs text-gray-300 leading-relaxed max-w-none text-left">
+              {/* Disclaimer */}
+              <div className="flex gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-4 text-amber-200 font-medium">
+                <FiInfo className="w-5 h-5 text-amber-400 shrink-0" />
+                <p>
+                  <strong>⚠️ NOTA PROVISIONAL IMPORTANTE:</strong> Este documento es una versión preliminar de carácter técnico y académico diseñada para el entorno de pruebas del Sistema STIMI. Se encuentra sujeto a revisión y aprobación definitiva por parte de la oficina jurídica y de control interno de la institución.
+                </p>
+              </div>
+
+              <h4 className="font-bold text-white text-sm pt-2">1. Identificación del Responsable</h4>
+              <p>
+                El Sistema de Control de Informes STIMI, correspondiente al Centro de Gestión y Desarrollo Sostenible Surcolombiano (SENA Regional Huila), actuará como encargado del almacenamiento de la información personal suministrada en el presente formulario.
+              </p>
+
+              <h4 className="font-bold text-white text-sm pt-2">2. Finalidad del Tratamiento</h4>
+              <p>La recolección, almacenamiento y uso de sus datos personales tendrán como únicas finalidades:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Registrar su perfil dentro de la plataforma STIMI para el envío de informes de supervisión de contratos (Gestión de Compromiso - GC y Gestión de Formación - GF).</li>
+                <li>Realizar la verificación de su identidad por parte de los coordinadores académicos autorizados para la aprobación de su cuenta.</li>
+                <li>Permitir el contacto por canales institucionales únicamente para asuntos directamente relacionados con sus entregas y actividades contractuales en el SENA.</li>
+              </ul>
+
+              <h4 className="font-bold text-white text-sm pt-2">3. Tratamiento y Seguridad de los Datos</h4>
+              <p>
+                Los datos recolectados se almacenan de forma segura en las bases de datos cifradas del sistema y no serán transferidos ni compartidos con terceros, con excepción de los requerimientos y solicitudes expresas por mandatos legales u organismos judiciales competentes. La información se conservará únicamente mientras su cuenta permanezca activa en la institución o durante el tiempo establecido por la tabla de retención documental institucional.
+              </p>
+
+              <h4 className="font-bold text-white text-sm pt-2">4. Derechos del Titular</h4>
+              <p>De conformidad con lo dispuesto en la <strong>Ley 1581 de 2012</strong> y el <strong>Decreto 1377 de 2013</strong>, usted como titular de los datos personales tiene derecho a:</p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>Conocer, actualizar y rectificar sus datos personales ante los responsables del sistema.</li>
+                <li>Solicitar prueba de la autorización otorgada, salvo cuando la ley la exceptúe.</li>
+                <li>Ser informado acerca del uso que se le ha dado a sus datos.</li>
+                <li>Revocar la autorización y/o solicitar la supresión del dato cuando en el tratamiento no se respeten los principios, derechos y garantías constitucionales y legales.</li>
+              </ul>
+
+              <h4 className="font-bold text-white text-sm pt-2">5. Canales de Ejercicio de Derechos</h4>
+              <p>
+                Para presentar consultas, reclamos o ejercer sus derechos constitucionales de Habeas Data, podrá comunicarse a través del canal de atención virtual oficial de soporte que será formalmente definido y notificado por la institución educativa responsable.
+              </p>
+            </div>
+
+            {/* Footer button */}
+            <div className="p-4 border-t border-white/10 bg-slate-950 flex justify-end">
+              <button
+                onClick={() => setIsPolicyModalOpen(false)}
+                className="px-5 py-2 bg-sena-green hover:bg-sena-green-hover text-white text-xs font-bold rounded-xl transition-all"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

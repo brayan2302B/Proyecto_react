@@ -56,6 +56,7 @@ export default function Reportes() {
       setStats(statsData);
       setInstructores(instList);
     } catch (err) {
+      console.error(err);
       toast.error('Error al cargar datos estadísticos');
     } finally {
       setLoading(false);

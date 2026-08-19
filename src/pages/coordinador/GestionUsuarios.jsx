@@ -15,6 +15,7 @@ import {
   FiAlertCircle
 } from 'react-icons/fi';
 import { toast } from 'sonner';
+import PageContainer from '../../components/PageContainer';
 
 export default function GestionUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
@@ -177,7 +178,7 @@ export default function GestionUsuarios() {
   });
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -505,6 +506,6 @@ export default function GestionUsuarios() {
         </div>
       )}
 
-    </div>
+    </PageContainer>
   );
 }

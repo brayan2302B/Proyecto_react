@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi';
 import { getInformes, getHistorial, addVersion, descargarPdf, verPdf, verPdfVersion, updateEstadoInforme, descartarUltimaVersion } from '../../services/informesService';
 import { toast } from 'sonner';
+import PageContainer from '../../components/PageContainer';
 
 // Month names defined at module scope so they are accessible everywhere
 const MESES = [
@@ -112,7 +113,7 @@ export default function MisInformes() {
         }
 
         const versions = Array.isArray(rep?.versiones) ? rep.versiones : [];
-        const lastVersion = versions.length > 0 ? versions[versions.length - 1] : null;
+        const lastVersion = versions.length > 0 ? versions[0] : null;
 
         if (lastVersion) {
           groups[periodKey].files.push({
@@ -354,7 +355,7 @@ const handleDescartarBorrador = async (reportId) => {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto animate-in fade-in duration-500 relative">
+    <PageContainer>
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -887,6 +888,6 @@ const handleDescartarBorrador = async (reportId) => {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -8,8 +8,6 @@ import {
   FiChevronDown, 
   FiChevronRight, 
   FiCornerDownRight,
-  FiRotateCcw,
-  FiCheckSquare,
   FiInfo,
   FiX,
   FiArrowLeft,
@@ -17,35 +15,52 @@ import {
 } from 'react-icons/fi';
 import { getInformes, addVersion, updateEstadoInforme, verPdf, uploadNuevaVersion, descartarUltimaVersion } from '../../services/informesService';
 import { toast } from 'sonner';
+import { usePeriodo } from '../../components/PeriodoContext';
+import PageContainer from '../../components/PageContainer';
 
 export default function PeriodoActual() {
+  const { periodoInfo } = usePeriodo();
+  const currentPeriodName = periodoInfo?.mesActivo || '';
+
   const [informesState, setInformesState] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [step, setStep] = useState(1);
   const fileInputRef = React.useRef(null);
   
   // Modal state
-  const [selectedPeriod, setSelectedPeriod] = useState('Julio 2026');
+  const [selectedPeriod, setSelectedPeriod] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const location = useLocation();
 
+  // Set selected period once periodInfo resolves
+  useEffect(() => {
+    if (currentPeriodName) {
+      setSelectedPeriod(currentPeriodName);
+    }
+  }, [currentPeriodName]);
+  
   // Load initial reports state
   useEffect(() => {
-    getInformes().then(data => setInformesState(data));
+    getInformes().then(data => {
+      console.log('>>> [DEBUG] getInformes() completo, informesState:', JSON.stringify(data, null, 2));
+      console.log('>>> [DEBUG] Períodos disponibles:', data.map(d => d.periodo));
+      console.log('>>> [DEBUG] Tipos disponibles:', data.map(d => d.tipo));
+      setInformesState(data);
+    });
   }, []);
 
   useEffect(() => {
-    if (location.state?.openModal && location.state?.reportType) {
+    if (location.state?.openModal && location.state?.reportType && currentPeriodName) {
       setSelectedType(location.state.reportType);
-      setSelectedPeriod('Julio 2026'); 
+      setSelectedPeriod(currentPeriodName); 
       setStep(3); // Jump to upload step since period and type are predefined
       setIsModalOpen(true);
       window.history.replaceState({}, document.title);
     }
-  }, [location]);
+  }, [location, currentPeriodName]);
 
   const [expandedVersions, setExpandedVersions] = useState({ GC: true, GF: true });
 
@@ -91,17 +106,17 @@ export default function PeriodoActual() {
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !currentPeriodName) return;
 
     setIsUploading(true);
     try {
-      const existingReport = getJulioReport(selectedType);
+      const existingReport = getPeriodoActualReport(selectedType);
       if (existingReport && existingReport.id) {
         // Report exists, upload a new version incrementing the version counter
-        await uploadNuevaVersion('Julio 2026', selectedType, selectedFile);
+        await uploadNuevaVersion(currentPeriodName, selectedType, selectedFile);
       } else {
         // First version, upload new report
-        await addVersion('Julio 2026', selectedType, 'inst-1', selectedFile);
+        await addVersion(currentPeriodName, selectedType, 'inst-1', selectedFile);
       }
 
       // Refresh local state from the service (single source of truth)
@@ -118,7 +133,9 @@ export default function PeriodoActual() {
 
   const openModal = () => {
     setSelectedType('');
-    setSelectedPeriod('Julio 2026');
+    if (currentPeriodName) {
+      setSelectedPeriod(currentPeriodName);
+    }
     setSelectedFile(null);
     setStep(2); // Jump to choosing type
     setIsModalOpen(true);
@@ -128,32 +145,38 @@ export default function PeriodoActual() {
     setExpandedVersions(prev => ({ ...prev, [type]: !prev[type] }));
   };
 
-  const getJulioReport = (type) => {
-    return informesState.find(inf => inf.periodo === "Julio 2026" && inf.tipo === type);
+  const getPeriodoActualReport = (type) => {
+    if (!currentPeriodName) return null;
+    return informesState.find(inf => inf.periodo === currentPeriodName && inf.tipo === type);
   };
 
-  const handleSimulateAction = async (type, action, comment = "") => {
+  const handleSubirBorrador = async (type) => {
     try {
+      if (!currentPeriodName) return;
       // Find the informe id to pass to updateEstadoInforme
       const informe = informesState.find(
-        inf => inf.periodo === 'Julio 2026' && inf.tipo === type
+        inf => inf.periodo === currentPeriodName && inf.tipo === type
       );
-      if (!informe) return;
+      if (!informe || !informe.id) return;
 
-      await updateEstadoInforme(informe.id, action, comment);
+      const toastId = toast.loading('Subiendo borrador...');
+      await updateEstadoInforme(informe.id, 'Pendiente');
 
       // Refresh local state from the service
       const updated = await getInformes();
       setInformesState(updated);
+      toast.success('Borrador subido correctamente.', { id: toastId });
     } catch (err) {
-      console.error('Error al simular acción:', err);
+      console.error('Error al subir borrador:', err);
+      toast.error('No se pudo subir el borrador.');
     }
   };
 
   const handleDescartarBorrador = async (type) => {
     try {
+      if (!currentPeriodName) return;
       const informe = informesState.find(
-        inf => inf.periodo === 'Julio 2026' && inf.tipo === type
+        inf => inf.periodo === currentPeriodName && inf.tipo === type
       );
       if (!informe || !informe.id) return;
 
@@ -169,8 +192,17 @@ export default function PeriodoActual() {
     }
   };
 
+  if (!currentPeriodName) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+        <div className="w-12 h-12 border-4 border-sena-green border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-500 text-sm">Cargando período activo...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-8 max-w-6xl mx-auto animate-in fade-in duration-500 relative">
+    <PageContainer>
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -193,18 +225,24 @@ export default function PeriodoActual() {
         <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
           <div>
             <span className="bg-green-100 text-[#407754] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Período Activo</span>
-            <h2 className="text-xl font-black text-gray-900 mt-1.5 font-sans">Informe del Período — Julio 2026</h2>
+            <h2 className="text-xl font-black text-gray-900 mt-1.5 font-sans">Informe del Período — {currentPeriodName}</h2>
           </div>
           <div className="text-xs text-gray-400 font-mono">STIMI Versioning Engine</div>
         </div>
  
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {['GC', 'GF'].map(type => {
-            const report = getJulioReport(type);
+            const report = getPeriodoActualReport(type);
             const versions = report ? report.versiones : [];
             const hasVersions = versions.length > 0;
             const lastVersion = hasVersions ? versions[0] : null;
             const currentStatus = lastVersion ? lastVersion.estado : 'No cargado';
+
+            console.log(`>>> [DEBUG-RENDER] type=${type} | report=`, report);
+            console.log(`>>> [DEBUG-RENDER] type=${type} | report?.periodo='${report?.periodo}' | report?.versiones?.length=${report?.versiones?.length}`);
+            console.log(`>>> [DEBUG-RENDER] type=${type} | versions.length=${versions.length} | hasVersions=${hasVersions}`);
+            console.log(`>>> [DEBUG-RENDER] type=${type} | lastVersion=`, lastVersion);
+            console.log(`>>> [DEBUG-RENDER] type=${type} | currentStatus='${currentStatus}'`);
  
             return (
               <div key={type} className="border border-gray-100 bg-gray-50/30 rounded-2xl p-5 flex flex-col justify-between">
@@ -330,7 +368,7 @@ export default function PeriodoActual() {
                           Descartar borrador
                         </button>
                         <button 
-                          onClick={() => handleSimulateAction(type, 'Pendiente')}
+                          onClick={() => handleSubirBorrador(type)}
                           className="flex-1 py-2 bg-[#407754] hover:bg-[#346244] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors"
                         >
                           Subir borrador
@@ -361,29 +399,8 @@ export default function PeriodoActual() {
                       </div>
                     )}
                   </div>
- 
-                  {/* Simulation controller (for demonstration/testing) */}
-                  {currentStatus === 'Pendiente' && (
-                    <div className="bg-gray-100/70 border border-gray-200 rounded-xl p-2 flex items-center justify-between text-[10px] text-gray-500">
-                      <span className="font-semibold">Simular Coord:</span>
-                      <div className="flex gap-1.5">
-                        <button 
-                          onClick={() => handleSimulateAction(type, 'Devuelto', 'Falta firma digital en la página 2')}
-                          className="px-2 py-1 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 font-bold flex items-center gap-0.5"
-                        >
-                          <FiRotateCcw className="w-2.5 h-2.5" /> Descartar borrador
-                        </button>
-                        <button 
-                          onClick={() => handleSimulateAction(type, 'Validado')}
-                          className="px-2 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded hover:bg-emerald-100 font-bold flex items-center gap-0.5"
-                        >
-                          <FiCheckSquare className="w-2.5 h-2.5" /> Subir borrador
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
+            </div>
             );
           })}
         </div>
@@ -605,6 +622,6 @@ export default function PeriodoActual() {
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

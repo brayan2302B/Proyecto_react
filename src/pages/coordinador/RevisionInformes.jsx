@@ -76,15 +76,15 @@ export default function RevisionInformes() {
     }
   };
 
-  const toggleInstructor = (instName) => {
+  const toggleInstructor = (instId) => {
     setExpandedInstructors(prev => ({
       ...prev,
-      [instName]: !prev[instName]
+      [instId]: !prev[instId]
     }));
   };
 
-  const toggleMonth = (instName, mesName) => {
-    const key = `${instName}-${mesName}`;
+  const toggleMonth = (instId, mesName) => {
+    const key = `${instId}-${mesName}`;
     setExpandedMonths(prev => ({
       ...prev,
       [key]: !prev[key]
@@ -123,10 +123,13 @@ export default function RevisionInformes() {
     const groups = {};
 
     filteredInformes.forEach(inf => {
+      const instId = inf.instructorId || 'unknown';
       const instName = inf.instructorNombre || 'Instructor Desconocido';
-      if (!groups[instName]) {
-        groups[instName] = {
+      if (!groups[instId]) {
+        groups[instId] = {
+          id: instId,
           name: instName,
+          correo: inf.instructorCorreo || '',
           area: inf.area || 'Sin Área',
           months: {},
           metrics: { total: 0, pendiente: 0, validado: 0, devuelto: 0 }
@@ -134,15 +137,15 @@ export default function RevisionInformes() {
       }
 
       const mes = inf.mes || 'Sin Período';
-      if (!groups[instName].months[mes]) {
-        groups[instName].months[mes] = {
+      if (!groups[instId].months[mes]) {
+        groups[instId].months[mes] = {
           name: mes,
           files: [],
           metrics: { total: 0, pendiente: 0, validado: 0, devuelto: 0 }
         };
       }
 
-      groups[instName].months[mes].files.push(inf);
+      groups[instId].months[mes].files.push(inf);
 
       const estado = inf.estado?.toLowerCase();
       const isVal = estado === 'validado' || estado === 'aprobado';
@@ -150,17 +153,17 @@ export default function RevisionInformes() {
       const isPen = estado === 'pendiente';
 
       if (isVal) {
-        groups[instName].months[mes].metrics.validado++;
-        groups[instName].metrics.validado++;
+        groups[instId].months[mes].metrics.validado++;
+        groups[instId].metrics.validado++;
       } else if (isDev) {
-        groups[instName].months[mes].metrics.devuelto++;
-        groups[instName].metrics.devuelto++;
+        groups[instId].months[mes].metrics.devuelto++;
+        groups[instId].metrics.devuelto++;
       } else if (isPen) {
-        groups[instName].months[mes].metrics.pendiente++;
-        groups[instName].metrics.pendiente++;
+        groups[instId].months[mes].metrics.pendiente++;
+        groups[instId].metrics.pendiente++;
       }
-      groups[instName].months[mes].metrics.total++;
-      groups[instName].metrics.total++;
+      groups[instId].months[mes].metrics.total++;
+      groups[instId].metrics.total++;
     });
 
     return Object.values(groups);
@@ -261,13 +264,13 @@ export default function RevisionInformes() {
           </div>
         ) : (
           instructoresAgrupados.map((inst) => {
-            const isInstExpanded = !!expandedInstructors[inst.name];
+            const isInstExpanded = !!expandedInstructors[inst.id];
             return (
-              <div key={inst.name} className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md">
+              <div key={inst.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden transition-all hover:shadow-md">
                 
                 {/* LEVEL 1: Instructor Header */}
                 <div 
-                  onClick={() => toggleInstructor(inst.name)}
+                  onClick={() => toggleInstructor(inst.id)}
                   className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none bg-white hover:bg-gray-50/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
@@ -276,6 +279,9 @@ export default function RevisionInformes() {
                     </div>
                     <div>
                       <h3 className="text-base font-bold text-gray-900">{inst.name}</h3>
+                      {inst.correo && (
+                        <p className="text-xs text-gray-400 font-mono">{inst.correo}</p>
+                      )}
                       <p className="text-xs text-gray-500">Área: <span className="font-semibold text-gray-700">{inst.area}</span></p>
                     </div>
                   </div>
@@ -315,14 +321,14 @@ export default function RevisionInformes() {
                 {isInstExpanded && (
                   <div className="px-5 pb-5 pt-2 bg-gray-50/50 border-t border-gray-50 space-y-3 animate-in slide-in-from-top-1 duration-200">
                     {Object.values(inst.months).map((month) => {
-                      const monthKey = `${inst.name}-${month.name}`;
+                      const monthKey = `${inst.id}-${month.name}`;
                       const isMonthExpanded = !!expandedMonths[monthKey];
                       return (
                         <div key={month.name} className="bg-white border border-gray-150 rounded-xl overflow-hidden shadow-xs">
                           
                           {/* Month Header */}
                           <div 
-                            onClick={() => toggleMonth(inst.name, month.name)}
+                            onClick={() => toggleMonth(inst.id, month.name)}
                             className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none bg-white hover:bg-gray-50/30 transition-colors"
                           >
                             <div className="flex items-center gap-3">
