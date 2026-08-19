@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-sena-green: #407754;
   --color-sena-green-hover: #335f43;
@@ -16,3 +18,10 @@ body {
   padding: 0;
   min-height: 100vh;
 }
+
+html.dark,
+html.dark body {
+  background-color: var(--color-gray-900);
+  color: var(--color-gray-100);
+}
+

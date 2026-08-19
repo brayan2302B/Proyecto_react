@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { FiArrowLeft, FiLock, FiMail, FiKey } from 'react-icons/fi';
 import fondoCampus from '../assets/Fondo.jpg.jpeg';
@@ -9,6 +10,7 @@ import axios from 'axios';
 
 export default function RecuperarContrasena() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Step 1: send email. Step 2: enter token + new password
   const [step, setStep] = useState(1);
@@ -42,10 +44,8 @@ export default function RecuperarContrasena() {
     const toastId = toast.loading('Procesando solicitud...');
 
     try {
-      const response = await api.post('/auth/forgot-password', { email });
+      await api.post('/auth/forgot-password', { email });
       toast.success('Solicitud procesada. Ingresa el token de recuperación.', { id: toastId });
-
-      // Token is delivered exclusively via email — no client-side exposure
 
       setStep(2);
     } catch (err) {
@@ -114,16 +114,16 @@ export default function RecuperarContrasena() {
         {step === 1 ? (
           <>
             <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">
-              Recuperar Contraseña
+              {t('recuperar.title', 'Recuperar Contraseña')}
             </h2>
             <p className="text-gray-200 text-sm mb-6 max-w-xs mx-auto font-medium">
-              Ingresa tu correo institucional y te enviaremos las instrucciones para restablecer tu contraseña.
+              {t('recuperar.subtitle', 'Ingresa tu correo institucional y te enviaremos las instrucciones para restablecer tu contraseña.')}
             </p>
 
             <form onSubmit={handleForgot} className="space-y-5 text-left" noValidate>
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-white block">
-                  Correo Electrónico
+                  {t('registro.email', 'Correo Electrónico')}
                 </label>
                 <div className="relative">
                   <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -136,7 +136,7 @@ export default function RecuperarContrasena() {
                     className={`w-full pl-10 pr-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border ${
                       errorForgot 
                         ? 'border-red-500 focus:ring-red-500/30' 
-                        : 'border-white/20 focus:border-sena-green focus:ring-sena-green/30'
+                        : 'border-white/20 focus:border-[#407754] focus:ring-[#407754]/30'
                     } focus:outline-none focus:ring-4 transition-all duration-200 text-sm`}
                   />
                 </div>
@@ -156,10 +156,10 @@ export default function RecuperarContrasena() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span>Procesando...</span>
+                    <span>{t('registro.processing', 'Procesando...')}</span>
                   </>
                 ) : (
-                  <span>Enviar Instrucciones</span>
+                  <span>{t('recuperar.sendInstructions', 'Enviar Instrucciones')}</span>
                 )}
               </button>
             </form>
@@ -167,32 +167,30 @@ export default function RecuperarContrasena() {
         ) : (
           <>
             <h2 className="text-2xl font-extrabold text-white mb-2 tracking-tight">
-              Nueva Contraseña
+              {t('recuperar.newPasswordTitle', 'Nueva Contraseña')}
             </h2>
             <p className="text-gray-200 text-sm mb-6 max-w-xs mx-auto font-medium">
-              Ingresa el token recibido y tu nueva contraseña.
+              {t('recuperar.newPasswordSubtitle', 'Ingresa el token recibido y tu nueva contraseña.')}
             </p>
-
-
 
             <form onSubmit={handleReset} className="space-y-4 text-left" noValidate>
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-white block">Token de Recuperación</label>
+                <label className="text-sm font-bold text-white block">{t('recuperar.tokenLabel', 'Token de Recuperación')}</label>
                 <div className="relative">
                   <FiKey className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
                     type="text"
-                    placeholder="Pega el token aquí"
+                    placeholder={t('recuperar.tokenPlaceholder', 'Pega el token aquí')}
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     disabled={loadingReset}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:outline-none focus:ring-4 focus:ring-sena-green/30 transition-all text-sm"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:outline-none focus:ring-4 focus:ring-[#407754]/30 transition-all text-sm"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-white block">Nueva Contraseña</label>
+                <label className="text-sm font-bold text-white block">{t('recuperar.newPasswordLabel', 'Nueva Contraseña')}</label>
                 <div className="relative">
                   <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
@@ -201,13 +199,13 @@ export default function RecuperarContrasena() {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     disabled={loadingReset}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:outline-none focus:ring-4 focus:ring-sena-green/30 transition-all text-sm"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:outline-none focus:ring-4 focus:ring-[#407754]/30 transition-all text-sm"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-white block">Confirmar Contraseña</label>
+                <label className="text-sm font-bold text-white block">{t('recuperar.confirmPasswordLabel', 'Confirmar Contraseña')}</label>
                 <div className="relative">
                   <FiLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
@@ -216,7 +214,7 @@ export default function RecuperarContrasena() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={loadingReset}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:outline-none focus:ring-4 focus:ring-sena-green/30 transition-all text-sm"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:outline-none focus:ring-4 focus:ring-[#407754]/30 transition-all text-sm"
                   />
                 </div>
               </div>
@@ -236,19 +234,19 @@ export default function RecuperarContrasena() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span>Restableciendo...</span>
+                    <span>{t('recuperar.resetting', 'Restableciendo...')}</span>
                   </>
                 ) : (
-                  <span>Restablecer Contraseña</span>
+                  <span>{t('recuperar.resetButton', 'Restablecer Contraseña')}</span>
                 )}
               </button>
 
               <button
                 type="button"
                 onClick={() => { setStep(1); setErrorReset(''); }}
-                className="w-full py-2 text-xs text-gray-300 hover:text-white font-semibold transition-colors"
+                className="w-full py-2 text-xs text-gray-300 hover:text-white font-semibold transition-colors cursor-pointer"
               >
-                ← Volver a ingresar el correo
+                {t('recuperar.reenterEmail', '← Volver a ingresar el correo')}
               </button>
             </form>
           </>
@@ -261,7 +259,7 @@ export default function RecuperarContrasena() {
             className="inline-flex items-center gap-2 text-xs font-semibold text-gray-300 hover:text-white transition-colors duration-200"
           >
             <FiArrowLeft className="w-4 h-4" />
-            Volver al inicio de sesión
+            {t('recuperar.backToLogin', 'Volver al inicio de sesión')}
           </Link>
         </div>
 
@@ -269,3 +267,4 @@ export default function RecuperarContrasena() {
     </div>
   );
 }
+

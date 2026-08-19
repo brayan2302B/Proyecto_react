@@ -148,12 +148,12 @@ export default function NotificacionesFAB() {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-12 h-12 rounded-full bg-white border border-gray-150 shadow-lg flex items-center justify-center text-gray-500 hover:text-gray-700 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer relative"
+        className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 border border-gray-150 dark:border-gray-700 shadow-lg flex items-center justify-center text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer relative"
         title="Notificaciones"
       >
         <FiBell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900">
             {unreadCount}
           </span>
         )}
@@ -161,10 +161,10 @@ export default function NotificacionesFAB() {
 
       {/* Popover */}
       {isOpen && (
-        <div className="absolute bottom-14 right-0 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl p-4 space-y-3 origin-bottom-right z-50 transition-all duration-200">
-          <div className="flex justify-between items-center border-b border-gray-50 pb-2">
+        <div className="absolute bottom-14 right-0 w-80 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl p-4 space-y-3 origin-bottom-right z-50 transition-all duration-200 text-gray-900 dark:text-gray-100">
+          <div className="flex justify-between items-center border-b border-gray-50 dark:border-gray-700 pb-2">
             <div className="flex items-center gap-1.5">
-              <h4 className="font-bold text-gray-800 text-xs uppercase tracking-wider">Notificaciones</h4>
+              <h4 className="font-bold text-gray-800 dark:text-gray-200 text-xs uppercase tracking-wider">Notificaciones</h4>
               {unreadCount > 0 && (
                 <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{unreadCount}</span>
               )}
@@ -172,7 +172,7 @@ export default function NotificacionesFAB() {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-[10px] text-[#407754] font-bold hover:underline cursor-pointer"
+                className="text-[10px] text-[#407754] dark:text-emerald-400 font-bold hover:underline cursor-pointer"
               >
                 Marcar leídas
               </button>
@@ -182,10 +182,10 @@ export default function NotificacionesFAB() {
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
             {loading ? (
               <div className="flex items-center justify-center py-6">
-                <div className="w-6 h-6 border-2 border-[#407754] border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-6 h-6 border-2 border-[#407754] dark:border-emerald-400 border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : alertas.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-6 gap-2 text-gray-400">
+              <div className="flex flex-col items-center justify-center py-6 gap-2 text-gray-400 dark:text-gray-500">
                 <FiInbox className="w-8 h-8" />
                 <p className="text-xs font-semibold">Sin notificaciones</p>
               </div>
@@ -203,33 +203,33 @@ export default function NotificacionesFAB() {
                     onClick={() => !isRead && markOneAsRead(id)}
                     className={`group p-3 rounded-xl border text-[11px] leading-relaxed transition-colors flex gap-2 cursor-pointer ${
                       isRead
-                        ? 'bg-white border-gray-100 text-gray-500'
-                        : 'bg-green-50 border-green-100 text-gray-800'
+                        ? 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-500 dark:text-gray-400'
+                        : 'bg-green-50 dark:bg-green-950/30 border-green-100 dark:border-green-900/50 text-gray-800 dark:text-gray-200'
                     }`}
                   >
                     <div className="mt-0.5 shrink-0">
                       {tipo === 'warning' || tipo === 'error' ? (
                         <FiInfo className="text-amber-500 w-3.5 h-3.5" />
                       ) : (
-                        <FiCheck className="text-[#407754] w-3.5 h-3.5" />
+                        <FiCheck className="text-[#407754] dark:text-emerald-400 w-3.5 h-3.5" />
                       )}
                     </div>
                     <div className="flex-1 space-y-0.5">
                       <p className={isRead ? 'font-normal' : 'font-semibold'}>{msg}</p>
-                      <span className="text-[9px] text-gray-400 font-medium flex items-center gap-1">
+                      <span className="text-[9px] text-gray-400 dark:text-gray-500 font-medium flex items-center gap-1">
                         <FiClock className="w-2.5 h-2.5" /> {timeAgo(dateStr)}
                       </span>
                     </div>
                     <div className="flex flex-col items-center gap-1 shrink-0">
                       <button
                         onClick={(e) => deleteOne(e, id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:text-red-400 text-gray-300 cursor-pointer"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:text-red-400 text-gray-300 dark:text-gray-600 cursor-pointer"
                         title="Eliminar"
                       >
                         <FiTrash2 className="w-3 h-3" />
                       </button>
                       {!isRead && (
-                        <span className="mt-1 w-2 h-2 bg-[#407754] rounded-full shrink-0"></span>
+                        <span className="mt-1 w-2 h-2 bg-[#407754] dark:bg-emerald-400 rounded-full shrink-0"></span>
                       )}
                     </div>
                   </div>
@@ -238,11 +238,12 @@ export default function NotificacionesFAB() {
             )}
           </div>
 
-          <div className="text-center pt-1 border-t border-gray-50">
-            <span className="text-[10px] text-gray-400 font-medium">STIMI · Notificaciones en tiempo real</span>
+          <div className="text-center pt-1 border-t border-gray-50 dark:border-gray-700">
+            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">STIMI · Notificaciones en tiempo real</span>
           </div>
         </div>
       )}
     </div>
   );
 }
+

@@ -121,10 +121,10 @@ export default function AsistenteFAB() {
 
       {/* Popover Chat */}
       {isOpen && (
-        <div className="absolute bottom-14 right-0 w-96 bg-white border border-gray-100 rounded-2xl shadow-xl flex flex-col h-[480px] overflow-hidden animate-fade-in origin-bottom-right z-50 transition-all duration-200 transform scale-100">
+        <div className="absolute bottom-14 right-0 w-96 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl flex flex-col h-[480px] overflow-hidden animate-fade-in origin-bottom-right z-50 transition-all duration-200 transform scale-100 text-gray-900 dark:text-gray-100">
           
           {/* Header */}
-          <div className="bg-sena-green text-white px-4 py-3.5 flex items-center justify-between">
+          <div className="bg-[#407754] text-white px-4 py-3.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center">
                 <FiCpu className="w-4 h-4 text-white" />
@@ -143,7 +143,7 @@ export default function AsistenteFAB() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50 dark:bg-gray-900/50">
             {messages.map((msg) => {
               const isAss = msg.sender === 'assistant';
               return (
@@ -154,12 +154,12 @@ export default function AsistenteFAB() {
                   <div className="space-y-0.5">
                     <div className={`p-3 rounded-xl text-[11px] leading-relaxed ${
                       isAss 
-                        ? 'bg-white text-gray-700 rounded-tl-none border border-gray-100 shadow-xs' 
-                        : 'bg-sena-green text-white rounded-tr-none'
+                        ? 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-tl-none border border-gray-100 dark:border-gray-600 shadow-xs' 
+                        : 'bg-[#407754] text-white rounded-tr-none'
                     }`}>
                       <p>{msg.text}</p>
                     </div>
-                    <span className={`text-[8px] font-medium text-gray-400 block ${isAss ? 'text-left' : 'text-right'}`}>
+                    <span className={`text-[8px] font-medium text-gray-400 dark:text-gray-500 block ${isAss ? 'text-left' : 'text-right'}`}>
                       {msg.time}
                     </span>
                   </div>
@@ -169,7 +169,7 @@ export default function AsistenteFAB() {
 
             {isThinking && (
               <div className="flex gap-2 max-w-[80%] self-start">
-                <div className="bg-white border border-gray-100 rounded-xl rounded-tl-none p-2.5 flex items-center gap-1 shadow-xs">
+                <div className="bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-xl rounded-tl-none p-2.5 flex items-center gap-1 shadow-xs">
                   <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
                   <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
                   <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
@@ -180,40 +180,40 @@ export default function AsistenteFAB() {
           </div>
 
           {/* Quick suggestions */}
-          <div className="px-4 py-2 bg-white border-t border-gray-50 flex gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none">
+          <div className="px-4 py-2 bg-white dark:bg-gray-800 border-t border-gray-50 dark:border-gray-700 flex gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none">
             <button 
               onClick={() => handleQuickQuestion('¿Cuáles informes están pendientes?')}
-              className="text-[9px] font-semibold bg-gray-50 hover:bg-sena-green-light border border-gray-100 hover:border-green-200 text-gray-600 hover:text-sena-green px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+              className="text-[9px] font-semibold bg-gray-50 dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900/30 border border-gray-100 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:text-[#407754] dark:hover:text-emerald-400 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
             >
               Pendientes
             </button>
             <button 
               onClick={() => handleQuickQuestion('¿Cuál es la tasa de cumplimiento?')}
-              className="text-[9px] font-semibold bg-gray-50 hover:bg-sena-green-light border border-gray-100 hover:border-green-200 text-gray-600 hover:text-sena-green px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+              className="text-[9px] font-semibold bg-gray-50 dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900/30 border border-gray-100 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:text-[#407754] dark:hover:text-emerald-400 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
             >
               Cumplimiento
             </button>
             <button 
               onClick={() => handleQuickQuestion('¿Cómo descargo los formatos?')}
-              className="text-[9px] font-semibold bg-gray-50 hover:bg-sena-green-light border border-gray-100 hover:border-green-200 text-gray-600 hover:text-sena-green px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+              className="text-[9px] font-semibold bg-gray-50 dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900/30 border border-gray-100 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:text-[#407754] dark:hover:text-emerald-400 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
             >
               Formatos
             </button>
           </div>
 
           {/* Input Form */}
-          <div className="border-t border-gray-100 p-3 bg-white">
+          <div className="border-t border-gray-100 dark:border-gray-700 p-3 bg-white dark:bg-gray-800">
             <form onSubmit={handleSend} className="flex gap-2">
               <input
                 type="text"
                 value={inputVal}
                 onChange={(e) => setInputVal(e.target.value)}
                 placeholder="Escribe tu consulta... (Enter)"
-                className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
+                className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#407754] transition-all"
               />
               <button
                 type="submit"
-                className="px-3 py-2 bg-sena-green hover:bg-sena-green-hover text-white rounded-xl transition-all flex items-center justify-center shadow-xs"
+                className="px-3 py-2 bg-[#407754] hover:bg-[#335f43] text-white rounded-xl transition-all flex items-center justify-center shadow-xs cursor-pointer"
               >
                 <FiSend className="w-3.5 h-3.5" />
               </button>

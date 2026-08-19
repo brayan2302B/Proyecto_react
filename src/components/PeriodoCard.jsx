@@ -51,29 +51,29 @@ export default function PeriodoCard({ isEditable = false }) {
   const ActiveIcon = periodoInfo.habilitado ? FiUnlock : FiLock;
 
   return (
-    <div className="bg-green-50 border border-green-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-5 relative overflow-hidden">
+    <div className="bg-green-50 dark:bg-gray-800/80 border border-green-200 dark:border-gray-700 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-5 relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute -right-10 -top-10 text-green-100 opacity-50">
+      <div className="absolute -right-10 -top-10 text-green-100 dark:text-gray-700 opacity-50 dark:opacity-20">
         <ActiveIcon className="w-48 h-48" />
       </div>
 
       <div className="flex flex-1 items-start sm:items-center gap-5 relative z-10 w-full">
-        <div className="bg-white p-3 rounded-full shadow-sm shrink-0 relative z-10">
-          <ActiveIcon className="w-8 h-8 text-[#407754]" />
+        <div className="bg-white dark:bg-gray-700 p-3 rounded-full shadow-sm shrink-0 relative z-10">
+          <ActiveIcon className="w-8 h-8 text-[#407754] dark:text-emerald-400" />
         </div>
         
         <div className="relative z-10 flex-1 w-full">
           {isEditing ? (
             <div className="space-y-3 w-full max-w-xl">
-              <h4 className="font-bold text-gray-900 text-sm">Editar Período de Carga</h4>
+              <h4 className="font-bold text-gray-900 dark:text-gray-100 text-sm">Editar Período de Carga</h4>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Mes Activo</label>
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Mes Activo</label>
                   <select
                     value={mesActivo}
                     onChange={(e) => setMesActivo(e.target.value)}
-                    className="px-3 py-1.5 bg-white border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#407754] transition-all"
+                    className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] transition-all"
                   >
                     <option value="Julio 2026">Julio 2026</option>
                     <option value="Agosto 2026">Agosto 2026</option>
@@ -83,17 +83,17 @@ export default function PeriodoCard({ isEditable = false }) {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-500 uppercase">Fecha Límite</label>
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Fecha Límite</label>
                   <input
                     type="date"
                     value={fechaLimite}
                     onChange={(e) => setFechaLimite(e.target.value)}
-                    className="px-3 py-1.5 bg-white border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#407754] transition-all"
+                    className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] transition-all"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1 justify-end">
-                  <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer h-9">
+                  <label className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer h-9">
                     <input
                       type="checkbox"
                       checked={habilitado}
@@ -108,23 +108,23 @@ export default function PeriodoCard({ isEditable = false }) {
           ) : (
             <>
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h2 className="text-lg font-bold text-gray-900">
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                   {isEditable ? 'Período de Carga Académica' : 'Sistema Habilitado para Carga de Informes'}
                 </h2>
                 <span className={`${activeBadgeColor} text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide`}>
                   {activeBadgeLabel}
                 </span>
               </div>
-              <p className="text-gray-600 text-sm">
-                Período de carga: <strong className="text-gray-900">{periodoInfo.mesActivo}</strong> <span className="mx-2 text-gray-300">|</span> 
-                Fecha límite: <strong className="text-gray-900 text-red-600">{formatFriendlyDate(periodoInfo.fechaLimite)}</strong>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
+                Período de carga: <strong className="text-gray-900 dark:text-gray-100">{periodoInfo.mesActivo}</strong> <span className="mx-2 text-gray-300 dark:text-gray-600">|</span> 
+                Fecha límite: <strong className="text-red-600 dark:text-red-400">{formatFriendlyDate(periodoInfo.fechaLimite)}</strong>
               </p>
               
               <div className="mt-4 flex flex-wrap gap-2">
-                <span className="bg-blue-100 text-blue-800 text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg border border-blue-200">
+                <span className="bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-900">
                   Formato GTH-F-062 V10 (GC)
                 </span>
-                <span className="bg-emerald-100 text-emerald-800 text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg border border-emerald-200">
+                <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-900">
                   Formato GF (Gestión Financiera)
                 </span>
               </div>
@@ -139,13 +139,13 @@ export default function PeriodoCard({ isEditable = false }) {
             <div className="flex gap-2 w-full sm:w-auto">
               <button
                 onClick={handleCancel}
-                className="flex-1 sm:flex-initial px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5"
+                className="flex-1 sm:flex-initial px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <FiX className="w-4 h-4" /> Cancelar
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#407754] hover:bg-[#335f43] text-white text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 hover:shadow-md"
+                className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#407754] hover:bg-[#335f43] text-white text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 hover:shadow-md cursor-pointer"
               >
                 <FiCheck className="w-4 h-4" /> Guardar
               </button>
@@ -153,20 +153,20 @@ export default function PeriodoCard({ isEditable = false }) {
           ) : (
             <button
               onClick={() => setIsEditing(true)}
-              className="w-full md:w-auto px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 hover:shadow-sm"
+              className="w-full md:w-auto px-4 py-2.5 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 hover:shadow-sm cursor-pointer"
             >
-              <FiEdit2 className="w-4 h-4 text-[#407754]" /> Editar Período
+              <FiEdit2 className="w-4 h-4 text-[#407754] dark:text-emerald-400" /> Editar Período
             </button>
           )
         )}
         
         {!isEditable && (
           <div className="hidden lg:flex flex-col gap-2">
-            {/* Format download references if wanted */}
-            <span className="text-[10px] font-bold text-[#407754]/80 text-right">Formatos vigentes</span>
+            <span className="text-[10px] font-bold text-[#407754]/80 dark:text-emerald-400/80 text-right">Formatos vigentes</span>
           </div>
         )}
       </div>
     </div>
   );
 }
+
