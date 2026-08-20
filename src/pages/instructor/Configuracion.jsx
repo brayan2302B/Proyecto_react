@@ -4,7 +4,6 @@ import {
   FiBell, 
   FiCpu, 
   FiSettings,
-  FiGlobe,
   FiMonitor
 } from 'react-icons/fi';
 import { toast } from 'sonner';
@@ -189,27 +188,19 @@ export default function Configuracion() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('configuracion.themeVisual', 'Tema visual')}</label>
-            <select 
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#407754] transition-all cursor-pointer"
-            >
-              <option value="light">{t('configuracion.themeLightOption', 'Claro')}</option>
-              <option value="dark">{t('configuracion.themeDarkOption', 'Oscuro')}</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase flex items-center gap-1.5">
-              <FiGlobe className="w-3.5 h-3.5" /> {t('configuracion.preferredLanguage', 'Idioma preferido')}
-            </label>
+        <div className="space-y-4">
+          <SwitchItem 
+            label={t('sidebar.themeDark', 'Modo Oscuro')}
+            desc={t('coordConfig.darkModeDesc', 'Cambia la apariencia del sistema a colores oscuros')}
+            checked={theme === 'dark'}
+            onChange={(val) => setTheme(val ? 'dark' : 'light')}
+          />
+          <div className="flex flex-col gap-1 max-w-sm mt-4">
+            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('configuracion.preferredLanguage', 'Idioma del Sistema')}</label>
             <select 
               value={i18n.language ? i18n.language.substring(0, 2) : 'es'}
               onChange={(e) => i18n.changeLanguage(e.target.value)}
-              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-[#407754] transition-all cursor-pointer"
+              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white dark:focus:bg-gray-700 transition-all cursor-pointer"
             >
               <option value="es">{t('configuracion.spanish', 'Español (Colombia)')}</option>
               <option value="en">{t('configuracion.english', 'English (US)')}</option>

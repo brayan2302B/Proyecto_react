@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FiUnlock, FiLock, FiFileText, FiEdit2, FiCheck, FiX } from 'react-icons/fi';
 import { usePeriodo } from './PeriodoContext';
@@ -8,15 +8,49 @@ export default function PeriodoCard({ isEditable = false }) {
   const { t } = useTranslation();
   const { periodoInfo, updatePeriodo } = usePeriodo();
   const [isEditing, setIsEditing] = useState(false);
-  
+
+  const getInitialMonthAndYear = (str) => {
+    if (!str) return { month: 'Enero', year: new Date().getFullYear().toString() };
+    const parts = str.split(' ');
+    const month = parts[0] || 'Enero';
+    const year = parts[1] || new Date().getFullYear().toString();
+    return { month, year };
+  };
+
+  const initialParsed = getInitialMonthAndYear(periodoInfo.mesActivo);
+
   // Local edit states
-  const [mesActivo, setMesActivo] = useState(periodoInfo.mesActivo);
+  const [selectedMonth, setSelectedMonth] = useState(initialParsed.month);
+  const [selectedYear, setSelectedYear] = useState(initialParsed.year);
   const [fechaLimite, setFechaLimite] = useState(periodoInfo.fechaLimite.split('T')[0]);
   const [habilitado, setHabilitado] = useState(periodoInfo.habilitado);
 
+  // Sync state if context changes
+  useEffect(() => {
+    const parsed = getInitialMonthAndYear(periodoInfo.mesActivo);
+    setSelectedMonth(parsed.month);
+    setSelectedYear(parsed.year);
+    setFechaLimite(periodoInfo.fechaLimite.split('T')[0]);
+    setHabilitado(periodoInfo.habilitado);
+  }, [periodoInfo]);
+
+  const getTodayISO = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const handleSave = () => {
+    const todayStr = getTodayISO();
+    if (fechaLimite < todayStr) {
+      toast.error(t('periodoCard.errorPastDeadline', 'La fecha límite no puede ser anterior a la fecha de hoy.'));
+      return;
+    }
+    const mesActivoVal = `${selectedMonth} ${selectedYear}`;
     updatePeriodo({
-      mesActivo,
+      mesActivo: mesActivoVal,
       fechaLimite: `${fechaLimite}T23:59:00`,
       habilitado
     });
@@ -25,10 +59,28 @@ export default function PeriodoCard({ isEditable = false }) {
   };
 
   const handleCancel = () => {
-    setMesActivo(periodoInfo.mesActivo);
+    const parsed = getInitialMonthAndYear(periodoInfo.mesActivo);
+    setSelectedMonth(parsed.month);
+    setSelectedYear(parsed.year);
     setFechaLimite(periodoInfo.fechaLimite.split('T')[0]);
     setHabilitado(periodoInfo.habilitado);
     setIsEditing(false);
+  };
+
+  const getTranslatedPeriod = (mesActivoStr) => {
+    if (!mesActivoStr) return '';
+    const parts = mesActivoStr.split(' ');
+    const monthStr = parts[0];
+    const yearStr = parts[1] || '';
+    const monthsEs = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    const idx = monthsEs.indexOf(monthStr);
+    if (idx !== -1) {
+      return `${t(`months.${idx}`, monthStr)} ${yearStr}`;
+    }
+    return mesActivoStr;
   };
 
   const formatFriendlyDate = (isoString) => {
@@ -46,6 +98,28 @@ export default function PeriodoCard({ isEditable = false }) {
     const day = parts[2];
     return t('common.datePattern', '{{day}} de {{month}} de {{year}}', { day, month, year });
   };
+
+  const monthsList = [
+    { value: 'Enero', labelKey: 'months.0', labelDefault: 'Enero' },
+    { value: 'Febrero', labelKey: 'months.1', labelDefault: 'Febrero' },
+    { value: 'Marzo', labelKey: 'months.2', labelDefault: 'Marzo' },
+    { value: 'Abril', labelKey: 'months.3', labelDefault: 'Abril' },
+    { value: 'Mayo', labelKey: 'months.4', labelDefault: 'Mayo' },
+    { value: 'Junio', labelKey: 'months.5', labelDefault: 'Junio' },
+    { value: 'Julio', labelKey: 'months.6', labelDefault: 'Julio' },
+    { value: 'Agosto', labelKey: 'months.7', labelDefault: 'Agosto' },
+    { value: 'Septiembre', labelKey: 'months.8', labelDefault: 'Septiembre' },
+    { value: 'Octubre', labelKey: 'months.9', labelDefault: 'Octubre' },
+    { value: 'Noviembre', labelKey: 'months.10', labelDefault: 'Noviembre' },
+    { value: 'Diciembre', labelKey: 'months.11', labelDefault: 'Diciembre' },
+  ];
+
+  const currentSystemYear = new Date().getFullYear();
+  const targetMaxYear = Math.max(parseInt(selectedYear, 10) || currentSystemYear, currentSystemYear) + 1;
+  const yearsList = [];
+  for (let y = currentSystemYear; y <= targetMaxYear; y++) {
+    yearsList.push(y);
+  }
 
   const activeBadgeColor = periodoInfo.habilitado ? 'bg-[#407754] text-white' : 'bg-red-600 text-white';
   const activeBadgeLabel = periodoInfo.habilitado ? t('common.active', 'Activo') : t('common.closed', 'Cerrado');
@@ -68,18 +142,34 @@ export default function PeriodoCard({ isEditable = false }) {
             <div className="space-y-3 w-full max-w-xl">
               <h4 className="font-bold text-gray-900 dark:text-gray-100 text-sm">{t('periodoCard.editPeriodTitle', 'Editar Período de Carga')}</h4>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('periodoCard.activeMonthLabel', 'Mes Activo')}</label>
                   <select
-                    value={mesActivo}
-                    onChange={(e) => setMesActivo(e.target.value)}
-                    className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] transition-all"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] transition-all cursor-pointer"
                   >
-                    <option value="Julio 2026">Julio 2026</option>
-                    <option value="Agosto 2026">Agosto 2026</option>
-                    <option value="Septiembre 2026">Septiembre 2026</option>
-                    <option value="Octubre 2026">Octubre 2026</option>
+                    {monthsList.map(m => (
+                      <option key={m.value} value={m.value}>
+                        {t(m.labelKey, m.labelDefault)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('periodoCard.activeYearLabel', 'Año Activo')}</label>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] transition-all cursor-pointer"
+                  >
+                    {yearsList.map(y => (
+                      <option key={y} value={y.toString()}>
+                        {y}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -88,8 +178,9 @@ export default function PeriodoCard({ isEditable = false }) {
                   <input
                     type="date"
                     value={fechaLimite}
+                    min={getTodayISO()}
                     onChange={(e) => setFechaLimite(e.target.value)}
-                    className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] transition-all"
+                    className="px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] transition-all cursor-pointer"
                   />
                 </div>
 
@@ -117,7 +208,7 @@ export default function PeriodoCard({ isEditable = false }) {
                 </span>
               </div>
               <p className="text-gray-600 dark:text-gray-300 text-sm">
-                {t('periodoCard.loadPeriodPrefix', 'Período de carga:')} <strong className="text-gray-900 dark:text-gray-100">{periodoInfo.mesActivo}</strong> <span className="mx-2 text-gray-300 dark:text-gray-600">|</span> 
+                {t('periodoCard.loadPeriodPrefix', 'Período de carga:')} <strong className="text-gray-900 dark:text-gray-100">{getTranslatedPeriod(periodoInfo.mesActivo)}</strong> <span className="mx-2 text-gray-300 dark:text-gray-600">|</span> 
                 {t('periodoCard.deadlinePrefix', 'Fecha límite:')} <strong className="text-red-600 dark:text-red-400">{formatFriendlyDate(periodoInfo.fechaLimite)}</strong>
               </p>
               

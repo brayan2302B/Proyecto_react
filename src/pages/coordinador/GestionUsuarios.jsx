@@ -41,6 +41,18 @@ export default function GestionUsuarios() {
     contrasena: ''
   });
   const [saving, setSaving] = useState(false);
+  const [selectedUserDetails, setSelectedUserDetails] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setSelectedUserDetails(null);
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const loadData = async () => {
     try {
@@ -332,11 +344,7 @@ export default function GestionUsuarios() {
                 </button>
 
                 <button
-                  onClick={() => {
-                    let desc = `Detalles del Usuario:\nNombre: ${u.nombre}\nRol: ${u.rol}\nDocumento: ${u.documento}\nÁrea: ${u.area || 'Coordinación'}\nEstado: ${u.estado_cuenta.toUpperCase()}`;
-                    if (u.motivo_rechazo) desc += `\nMotivo de Rechazo: ${u.motivo_rechazo}`;
-                    toast.info(desc);
-                  }}
+                  onClick={() => setSelectedUserDetails(u)}
                   className="p-2 rounded-xl bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-600 transition-all"
                   title="Ver detalle"
                 >
@@ -504,6 +512,124 @@ export default function GestionUsuarios() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View User Details Modal */}
+      {selectedUserDetails && (
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in"
+          onClick={() => setSelectedUserDetails(null)}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 dark:border-gray-700 space-y-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+                {t('gestionUsuarios.viewDetails', 'Detalles del Usuario')}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {t('gestionUsuarios.viewDetailsSubtitle', 'Información completa del usuario registrado')}
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{t('registro.fullName', 'Nombre Completo')}</label>
+                <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-xl text-xs text-gray-900 dark:text-gray-100 font-medium">
+                  {selectedUserDetails.nombre}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{t('registro.email', 'Correo Electrónico')}</label>
+                <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-xl text-xs text-gray-900 dark:text-gray-100 break-all font-medium">
+                  {selectedUserDetails.email}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{t('registro.docType', 'Tipo de Documento')}</label>
+                  <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-xl text-xs text-gray-900 dark:text-gray-100 font-medium">
+                    {selectedUserDetails.tipo_documento === 'CC' ? t('registro.docTypeCC', 'Cédula de Ciudadanía (CC)') :
+                     selectedUserDetails.tipo_documento === 'CE' ? t('registro.docTypeCE', 'Cédula de Extranjería (CE)') :
+                     selectedUserDetails.tipo_documento === 'TI' ? t('registro.docTypeTI', 'Tarjeta de Identidad (TI)') :
+                     selectedUserDetails.tipo_documento || 'CC'}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{t('registro.docNumber', 'Número de Documento')}</label>
+                  <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-xl text-xs text-gray-900 dark:text-gray-100 font-medium">
+                    {selectedUserDetails.documento}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{t('gestionUsuarios.roleLabel', 'Rol')}</label>
+                  <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-xl flex items-center min-h-[34px]">
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                      selectedUserDetails.rol === 'coordinador' ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300' : 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                    }`}>
+                      {selectedUserDetails.rol}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{t('gestionUsuarios.accountStatus', 'Estado de Cuenta')}</label>
+                  <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-xl flex items-center min-h-[34px]">
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                      selectedUserDetails.estado_cuenta === 'aprobado' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300' :
+                      selectedUserDetails.estado_cuenta === 'rechazado' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300' :
+                      'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
+                    }`}>
+                      {selectedUserDetails.estado_cuenta === 'aprobado' ? t('common.active', 'Activo') : 
+                       selectedUserDetails.estado_cuenta === 'rechazado' ? t('common.rejected', 'Rechazado') : 
+                       t('common.pending', 'Pendiente')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{t('perfil.trainingArea', 'Área de Formación')}</label>
+                <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-xl text-xs text-gray-900 dark:text-gray-100 font-medium">
+                  {selectedUserDetails.area || t('sidebar.coordinador', 'Coordinación')}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase">{t('perfil.signature', 'Firma Digital')}</label>
+                <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-600 rounded-xl text-xs text-gray-900 dark:text-gray-100 font-medium">
+                  {selectedUserDetails.firma_digital_ruta ? t('perfil.signatureRegistered', 'Firma Registrada') : t('perfil.noSignature', 'No tiene una firma digital registrada en su cuenta.')}
+                </div>
+              </div>
+
+              {selectedUserDetails.estado_cuenta === 'rechazado' && selectedUserDetails.motivo_rechazo && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-bold text-red-500 dark:text-red-400 uppercase">{t('gestionUsuarios.rejectReasonLabel', 'Motivo de Rechazo')}</label>
+                  <div className="px-3 py-2 bg-red-50/10 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-800 dark:text-red-300 font-medium">
+                    {selectedUserDetails.motivo_rechazo}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-3">
+              <button
+                type="button"
+                onClick={() => setSelectedUserDetails(null)}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 text-xs font-semibold rounded-xl transition-all"
+              >
+                {t('common.close', 'Cerrar')}
+              </button>
+            </div>
           </div>
         </div>
       )}

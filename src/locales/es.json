@@ -172,6 +172,7 @@
     "toastUpdateSuccess": "Período de carga actualizado correctamente",
     "editPeriodTitle": "Editar Período de Carga",
     "activeMonthLabel": "Mes Activo",
+    "activeYearLabel": "Año Activo",
     "deadlineLabel": "Fecha Límite",
     "enabledLabel": "Habilitado",
     "academicLoadPeriod": "Período de Carga Académica",
@@ -179,7 +180,8 @@
     "loadPeriodPrefix": "Período de carga:",
     "deadlinePrefix": "Fecha límite:",
     "editPeriodButton": "Editar Período",
-    "validFormats": "Formatos vigentes"
+    "validFormats": "Formatos vigentes",
+    "errorPastDeadline": "La fecha límite no puede ser anterior a la fecha de hoy."
   },
   "periodoActual": {
     "title": "Período Actual",
@@ -336,6 +338,8 @@
   "gestionUsuarios": {
     "title": "Gestión de Usuarios",
     "subtitle": "Administre las cuentas del personal de coordinación e instructores del sistema",
+    "viewDetails": "Detalles del Usuario",
+    "viewDetailsSubtitle": "Información completa del usuario registrado",
     "newUser": "Nuevo Usuario",
     "totalUsers": "Total Usuarios",
     "coordinadores": "Coordinadores",

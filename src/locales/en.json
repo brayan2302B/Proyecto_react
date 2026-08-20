@@ -172,6 +172,7 @@
     "toastUpdateSuccess": "Upload period updated successfully",
     "editPeriodTitle": "Edit Upload Period",
     "activeMonthLabel": "Active Month",
+    "activeYearLabel": "Active Year",
     "deadlineLabel": "Deadline",
     "enabledLabel": "Enabled",
     "academicLoadPeriod": "Academic Upload Period",
@@ -179,7 +180,8 @@
     "loadPeriodPrefix": "Upload period:",
     "deadlinePrefix": "Deadline:",
     "editPeriodButton": "Edit Period",
-    "validFormats": "Active formats"
+    "validFormats": "Active formats",
+    "errorPastDeadline": "The deadline cannot be earlier than today's date."
   },
   "periodoActual": {
     "title": "Current Period",
@@ -336,6 +338,8 @@
   "gestionUsuarios": {
     "title": "User Management",
     "subtitle": "Manage coordination staff and instructor accounts in the system",
+    "viewDetails": "User Details",
+    "viewDetailsSubtitle": "Full information of the registered user",
     "newUser": "New User",
     "totalUsers": "Total Users",
     "coordinadores": "Coordinators",
