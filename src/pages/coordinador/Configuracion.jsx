@@ -88,7 +88,7 @@ export default function Configuracion() {
       toast.success(t('configuracion.saveSuccess', 'Configuración guardada correctamente'));
     } catch (err) {
       console.error('Error al guardar configuración:', err);
-      toast.error('No se pudo guardar la configuración');
+      toast.error(t('configuracion.alerts.saveError', 'No se pudo guardar la configuración'));
     } finally {
       setSaving(false);
     }
@@ -97,7 +97,7 @@ export default function Configuracion() {
   // ── Caché del navegador ─────────────────────────────────────────────────────
   const handleClearCache = async () => {
     const confirmed = window.confirm(
-      '¿Deseas eliminar la caché local del navegador?\n\nEsta acción limpiará datos temporales almacenados en tu dispositivo. Tu sesión se mantendrá activa.'
+      t('configuracion.alerts.confirmClearCache', '¿Deseas eliminar la caché local del navegador?\n\nEsta acción limpiará datos temporales almacenados en tu dispositivo. Tu sesión se mantendrá activa.')
     );
     if (!confirmed) return;
 
@@ -115,14 +115,14 @@ export default function Configuracion() {
         await Promise.all(cacheNames.map((name) => caches.delete(name)));
       }
 
-      toast.success('✅ Caché local eliminada correctamente. Recargando...', {
+      toast.success(t('configuracion.alerts.cacheCleared', '✅ Caché local eliminada correctamente. Recargando...'), {
         duration: 2000,
       });
 
       setTimeout(() => window.location.reload(), 1800);
     } catch (err) {
       console.error('Error al limpiar caché:', err);
-      toast.error('No se pudo limpiar la caché completamente');
+      toast.error(t('configuracion.alerts.clearCacheError', 'No se pudo limpiar la caché completamente'));
     }
   };
   // ───────────────────────────────────────────────────────────────────────────
@@ -135,7 +135,7 @@ export default function Configuracion() {
     setNotifNuevos(true);
     setNotifAprobacion(false);
     setNotifCorreo(true);
-    toast.info('Se han descartado los cambios en la configuración');
+    toast.info(t('configuracion.alerts.discarded', 'Se han descartado los cambios en la configuración'));
   };
 
   // Switch wrapper component for clean render
@@ -179,26 +179,26 @@ export default function Configuracion() {
 
         <div className="space-y-1">
           <SwitchItem 
-            label="Informes pendientes de revisión"
-            desc="Alertar semanalmente sobre reportes de instructores sin validar"
+            label={t('coordConfig.notifPendingReview', 'Informes pendientes de revisión')}
+            desc={t('coordConfig.notifPendingReviewDesc', 'Alertar semanalmente sobre reportes de instructores sin validar')}
             checked={notifPendientes}
             onChange={setNotifPendientes}
           />
           <SwitchItem 
-            label="Nuevos informes recibidos"
-            desc="Notificar instantáneamente cuando un instructor realice un envío"
+            label={t('coordConfig.notifNewReports', 'Nuevos informes recibidos')}
+            desc={t('coordConfig.notifNewReportsDesc', 'Notificar instantáneamente cuando un instructor realice un envío')}
             checked={notifNuevos}
             onChange={setNotifNuevos}
           />
           <SwitchItem 
-            label="Usuarios pendientes de aprobación"
-            desc="Notificar sobre nuevas solicitudes de registro en la plataforma"
+            label={t('coordConfig.notifPendingApproval', 'Usuarios pendientes de aprobación')}
+            desc={t('coordConfig.notifPendingApprovalDesc', 'Notificar sobre nuevas solicitudes de registro en la plataforma')}
             checked={notifAprobacion}
             onChange={setNotifAprobacion}
           />
           <SwitchItem 
-            label="Notificaciones por correo electrónico"
-            desc="Enviar una copia de las alertas del sistema al correo institucional"
+            label={t('configuracion.notifCorreoLabel', 'Notificaciones por correo electrónico')}
+            desc={t('coordConfig.notifEmailDesc', 'Enviar una copia de las alertas del sistema al correo institucional')}
             checked={notifCorreo}
             onChange={setNotifCorreo}
           />
@@ -212,28 +212,28 @@ export default function Configuracion() {
             <FiCalendar className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Períodos de Carga y Plazos de Entrega</h3>
-            <p className="text-xs text-gray-400 dark:text-gray-500">Configuración del mes activo y fechas límite de carga de informes</p>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{t('coordConfig.uploadPeriodsTitle', 'Períodos de Carga y Plazos de Entrega')}</h3>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{t('coordConfig.uploadPeriodsDesc', 'Configuración del mes activo y fechas límite de carga de informes')}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Mes Activo de Presentación</label>
+            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('coordConfig.activeMonth', 'Mes Activo de Presentación')}</label>
             <select
               value={periodoActivo}
               onChange={(e) => setPeriodoActivo(e.target.value)}
               className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#407754] focus:bg-white dark:focus:bg-gray-700 transition-all cursor-pointer"
             >
-              <option value="Julio 2026">Julio 2026</option>
-              <option value="Agosto 2026">Agosto 2026</option>
-              <option value="Septiembre 2026">Septiembre 2026</option>
-              <option value="Octubre 2026">Octubre 2026</option>
+              <option value="Julio 2026">{t('months.6', 'Julio')} 2026</option>
+              <option value="Agosto 2026">{t('months.7', 'Agosto')} 2026</option>
+              <option value="Septiembre 2026">{t('months.8', 'Septiembre')} 2026</option>
+              <option value="Octubre 2026">{t('months.9', 'Octubre')} 2026</option>
             </select>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Fecha Límite Ordinaria</label>
+            <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('coordConfig.ordinaryDeadline', 'Fecha Límite Ordinaria')}</label>
             <input
               type="date"
               value={fechaLimite}
@@ -250,9 +250,9 @@ export default function Configuracion() {
                 onChange={(e) => setBloquearEnvios(e.target.checked)}
                 className="w-4.5 h-4.5 text-[#407754] bg-white border-gray-300 rounded focus:ring-[#407754] focus:ring-2 cursor-pointer"
               />
-              Bloquear envíos extemporáneos
+              {t('coordConfig.blockLateSubmissions', 'Bloquear envíos extemporáneos')}
             </label>
-            <span className="text-[9px] text-gray-400 dark:text-gray-500 block pl-7">Impide el envío una vez superada la fecha límite ordinaria</span>
+            <span className="text-[9px] text-gray-400 dark:text-gray-500 block pl-7">{t('coordConfig.blockLateSubmissionsDesc', 'Impide el envío una vez superada la fecha límite ordinaria')}</span>
           </div>
         </div>
       </div>
@@ -272,7 +272,7 @@ export default function Configuracion() {
         <div className="space-y-4">
           <SwitchItem 
             label={t('sidebar.themeDark', 'Modo Oscuro')}
-            desc="Cambia la apariencia del sistema a colores oscuros"
+            desc={t('coordConfig.darkModeDesc', 'Cambia la apariencia del sistema a colores oscuros')}
             checked={theme === 'dark'}
             onChange={(val) => setTheme(val ? 'dark' : 'light')}
           />
@@ -297,20 +297,28 @@ export default function Configuracion() {
     <div className="space-y-6 animate-in fade-in duration-300">
       <FirmaDigitalManager 
         defaultName={user?.nombreCompleto} 
-        defaultRole="Coordinador Académico"
+        defaultRole={t('coordConfig.academicCoordinator', 'Coordinador Académico')}
         onFirmaSave={(data) => setFirmaData(data)}
       />
     </div>
   );
 
   const renderSistemaTab = () => {
+    const lastUpdateDate = (() => {
+      const day = 23;
+      const monthIndex = 6;
+      const year = 2026;
+      const monthName = t(`months.${monthIndex}`, 'Julio');
+      return t('common.datePattern', '{{day}} de {{month}} de {{year}}', { day, month: monthName, year });
+    })();
+
     const infoItems = [
-      { label: 'Versión del Sistema', value: 'v1.2.0' },
-      { label: 'Regional', value: 'Antioquia' },
-      { label: 'Centro de Formación', value: 'Centro de Servicios y Gestión Empresarial' },
-      { label: 'Sede Principal', value: 'Complejo Central' },
-      { label: 'Rol de Usuario', value: 'Coordinador Académico' },
-      { label: 'Última Actualización', value: '23 de Julio de 2026' }
+      { label: t('configuracion.systemVersion', 'Versión del Sistema'), value: 'v1.2.0' },
+      { label: t('common.regional', 'Regional'), value: t('common.coordinacionRegional', 'Antioquia') },
+      { label: t('configuracion.trainingCenter', 'Centro de Formación'), value: t('common.coordinacionCentro', 'Centro de Servicios y Gestión Empresarial') },
+      { label: t('coordConfig.mainCampus', 'Sede Principal'), value: t('coordConfig.mainCampusValue', 'Complejo Central') },
+      { label: t('configuracion.userRole', 'Rol de Usuario'), value: t('coordConfig.academicCoordinator', 'Coordinador Académico') },
+      { label: t('configuracion.lastUpdate', 'Última Actualización'), value: lastUpdateDate }
     ];
 
     return (
@@ -339,13 +347,13 @@ export default function Configuracion() {
 
         {/* Acerca de STIMI Card */}
         <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-3xl p-6 shadow-sm">
-          <h4 className="text-sm font-extrabold text-blue-900 dark:text-blue-300 mb-2">Acerca de STIMI</h4>
+          <h4 className="text-sm font-extrabold text-blue-900 dark:text-blue-300 mb-2">{t('configuracion.aboutStimi', 'Acerca de STIMI')}</h4>
           <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed max-w-2xl mb-4">
-            STIMI (Sistema de Trazabilidad Mensual de Informes) es la plataforma oficial de seguimiento académico y contractual para instructores de la Regional Antioquia.
+            {t('coordConfig.aboutStimiDesc', 'STIMI (Sistema de Trazabilidad Mensual de Informes) es la plataforma oficial de seguimiento académico y contractual para instructores de la Regional Antioquia.')}
           </p>
           <div className="flex gap-2">
-            <span className="bg-[#407754] text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">GC - Gestión Contractual</span>
-            <span className="bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">GF - Gestión Financiera</span>
+            <span className="bg-[#407754] text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">{t('configuracion.gcContractual', 'GC - Gestión Contractual')}</span>
+            <span className="bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">{t('configuracion.gfFinancial', 'GF - Gestión Financiera')}</span>
           </div>
         </div>
 

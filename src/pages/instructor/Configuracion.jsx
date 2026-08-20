@@ -59,7 +59,7 @@ export default function Configuracion() {
       toast.success(t('configuracion.saveSuccess', 'Configuración guardada correctamente'));
     } catch (err) {
       console.error('Error al guardar configuración:', err);
-      toast.error('No se pudo guardar la configuración');
+      toast.error(t('configuracion.alerts.saveError', 'No se pudo guardar la configuración'));
     } finally {
       setSaving(false);
     }
@@ -70,13 +70,13 @@ export default function Configuracion() {
     setNotifEvidencias(true);
     setNotifSeguimiento(true);
     setNotifCorreo(false);
-    toast.info('Se han descartado los cambios en la configuración');
+    toast.info(t('configuracion.alerts.discarded', 'Se han descartado los cambios en la configuración'));
   };
 
   // ── Caché del navegador ─────────────────────────────────────────────────────
   const handleClearCache = async () => {
     const confirmed = window.confirm(
-      '¿Deseas eliminar la caché local del navegador?\n\nEsta acción limpiará datos temporales almacenados en tu dispositivo. Tu sesión se mantendrá activa.'
+      t('configuracion.alerts.confirmClearCache', '¿Deseas eliminar la caché local del navegador?\n\nEsta acción limpiará datos temporales almacenados en tu dispositivo. Tu sesión se mantendrá activa.')
     );
     if (!confirmed) return;
 
@@ -97,7 +97,7 @@ export default function Configuracion() {
         await Promise.all(cacheNames.map((name) => caches.delete(name)));
       }
 
-      toast.success('✅ Caché local eliminada correctamente. Recargando...', {
+      toast.success(t('configuracion.alerts.cacheCleared', '✅ Caché local eliminada correctamente. Recargando...'), {
         duration: 2000,
       });
 
@@ -105,7 +105,7 @@ export default function Configuracion() {
       setTimeout(() => window.location.reload(), 1800);
     } catch (err) {
       console.error('Error al limpiar caché:', err);
-      toast.error('No se pudo limpiar la caché completamente');
+      toast.error(t('configuracion.alerts.clearCacheError', 'No se pudo limpiar la caché completamente'));
     }
   };
   // ───────────────────────────────────────────────────────────────────────────
@@ -151,26 +151,26 @@ export default function Configuracion() {
 
         <div className="space-y-1">
           <SwitchItem 
-            label="Alertas de informes pendientes"
-            desc="Recibir recordatorios sobre informes GC/GF del mes actual pendientes de subir"
+            label={t('configuracion.notifPendientesLabel', 'Alertas de informes pendientes')}
+            desc={t('configuracion.notifPendientesDesc', 'Recibir recordatorios sobre informes GC/GF del mes actual pendientes de subir')}
             checked={notifPendientes}
             onChange={setNotifPendientes}
           />
           <SwitchItem 
-            label="Alertas de evidencias"
-            desc="Notificar cuando el plan de formación requiera nuevas evidencias"
+            label={t('configuracion.notifEvidenciasLabel', 'Alertas de evidencias')}
+            desc={t('configuracion.notifEvidenciasDesc', 'Notificar cuando el plan de formación requiera nuevas evidencias')}
             checked={notifEvidencias}
             onChange={setNotifEvidencias}
           />
           <SwitchItem 
-            label="Alertas de seguimiento a aprendices"
-            desc="Recordatorios semanales sobre el registro de novedades de los aprendices"
+            label={t('configuracion.notifSeguimientoLabel', 'Alertas de seguimiento a aprendices')}
+            desc={t('configuracion.notifSeguimientoDesc', 'Recordatorios semanales sobre el registro de novedades de los aprendices')}
             checked={notifSeguimiento}
             onChange={setNotifSeguimiento}
           />
           <SwitchItem 
-            label="Notificaciones por correo electrónico"
-            desc="Enviar copia del resumen de notificaciones al correo institucional"
+            label={t('configuracion.notifCorreoLabel', 'Notificaciones por correo electrónico')}
+            desc={t('configuracion.notifCorreoDesc', 'Enviar copia del resumen de notificaciones al correo institucional')}
             checked={notifCorreo}
             onChange={setNotifCorreo}
           />
@@ -224,12 +224,21 @@ export default function Configuracion() {
 
 
   const renderSistemaTab = () => {
+    // Translate the "Last Update" date dynamically
+    const lastUpdateDate = (() => {
+      const day = 23;
+      const monthIndex = 6; // July = index 6
+      const year = 2026;
+      const monthName = t(`months.${monthIndex}`, 'Julio');
+      return t('common.datePattern', '{{day}} de {{month}} de {{year}}', { day, month: monthName, year });
+    })();
+
     const infoItems = [
-      { label: 'Versión del Sistema', value: 'v1.2.0' },
-      { label: 'Regional', value: 'Huila' },
-      { label: 'Centro de Formación', value: 'Centro de Gestión y Desarrollo Sostenible Surcolombiano' },
-      { label: 'Rol de Usuario', value: 'Instructor Contratista' },
-      { label: 'Última Actualización', value: '23 de Julio de 2026' }
+      { label: t('configuracion.systemVersion', 'Versión del Sistema'), value: 'v1.2.0' },
+      { label: t('common.regional', 'Regional'), value: t('configuracion.regionalValue', 'Huila') },
+      { label: t('configuracion.trainingCenter', 'Centro de Formación'), value: t('common.centro', 'Centro de Gestión y Desarrollo Sostenible Surcolombiano') },
+      { label: t('configuracion.userRole', 'Rol de Usuario'), value: t('configuracion.userRoleValue', 'Instructor Contratista') },
+      { label: t('configuracion.lastUpdate', 'Última Actualización'), value: lastUpdateDate }
     ];
 
     return (
@@ -258,13 +267,13 @@ export default function Configuracion() {
 
         {/* Acerca de STIMI Card */}
         <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-3xl p-6 shadow-sm">
-          <h4 className="text-sm font-extrabold text-blue-900 dark:text-blue-300 mb-2">Acerca de STIMI</h4>
+          <h4 className="text-sm font-extrabold text-blue-900 dark:text-blue-300 mb-2">{t('configuracion.aboutStimi', 'Acerca de STIMI')}</h4>
           <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed max-w-2xl mb-4">
-            STIMI (Sistema de Trazabilidad Mensual de Informes) permite a los instructores cargar y realizar el seguimiento de sus entregables mensuales GC y GF de manera ágil y digitalizada.
+            {t('configuracion.aboutStimiDesc', 'STIMI (Sistema de Trazabilidad Mensual de Informes) permite a los instructores cargar y realizar el seguimiento de sus entregables mensuales GC y GF de manera ágil y digitalizada.')}
           </p>
           <div className="flex gap-2">
-            <span className="bg-[#407754] text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">GC - Gestión Contractual</span>
-            <span className="bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">GF - Gestión Financiera</span>
+            <span className="bg-[#407754] text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">{t('configuracion.gcContractual', 'GC - Gestión Contractual')}</span>
+            <span className="bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase">{t('configuracion.gfFinancial', 'GF - Gestión Financiera')}</span>
           </div>
         </div>
 

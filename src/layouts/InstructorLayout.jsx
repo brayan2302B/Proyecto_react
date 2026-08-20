@@ -8,6 +8,7 @@ import logoSena from '../assets/logo-sena.png';
 import api from '../services/api';
 import NotificacionesPanel from '../components/NotificacionesPanel';
 import AsistenteWidget from '../components/AsistenteWidget';
+import WhatsAppFAB from '../components/WhatsAppFAB';
 
 export default function InstructorLayout() {
   const { user, logout } = useAuth();
@@ -135,7 +136,6 @@ export default function InstructorLayout() {
 
       {/* Floating Bubbles Column — bottom-right corner */}
       <div className="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3">
-        
         {/* Notification FAB */}
         <div className="relative" ref={bellFabRef}>
           <button
@@ -161,6 +161,9 @@ export default function InstructorLayout() {
             onUnreadChange={setUnreadCount}
           />
         </div>
+
+        {/* WhatsApp Support FAB */}
+        <WhatsAppFAB sizeClass="w-14 h-14 shadow-xl" iconSizeClass="w-7 h-7" />
 
         {/* AI Assistant FAB */}
         <AsistenteWidget />

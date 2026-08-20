@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiUnlock, FiLock, FiFileText, FiEdit2, FiCheck, FiX } from 'react-icons/fi';
 import { usePeriodo } from './PeriodoContext';
 import { toast } from 'sonner';
 
 export default function PeriodoCard({ isEditable = false }) {
+  const { t } = useTranslation();
   const { periodoInfo, updatePeriodo } = usePeriodo();
   const [isEditing, setIsEditing] = useState(false);
   
@@ -19,35 +21,34 @@ export default function PeriodoCard({ isEditable = false }) {
       habilitado
     });
     setIsEditing(false);
-    toast.success('Período de carga actualizado correctamente');
+    toast.success(t('periodoCard.toastUpdateSuccess', 'Período de carga actualizado correctamente'));
   };
 
   const handleCancel = () => {
-    // Reset to current context values
     setMesActivo(periodoInfo.mesActivo);
     setFechaLimite(periodoInfo.fechaLimite.split('T')[0]);
     setHabilitado(periodoInfo.habilitado);
     setIsEditing(false);
   };
 
-  // Helper to format date nicely
   const formatFriendlyDate = (isoString) => {
     if (!isoString) return '';
     const datePart = isoString.split('T')[0];
     const parts = datePart.split('-');
     if (parts.length !== 3) return datePart;
     const months = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      t('months.0', 'Enero'), t('months.1', 'Febrero'), t('months.2', 'Marzo'), t('months.3', 'Abril'),
+      t('months.4', 'Mayo'), t('months.5', 'Junio'), t('months.6', 'Julio'), t('months.7', 'Agosto'),
+      t('months.8', 'Septiembre'), t('months.9', 'Octubre'), t('months.10', 'Noviembre'), t('months.11', 'Diciembre')
     ];
     const year = parts[0];
     const month = months[parseInt(parts[1], 10) - 1];
     const day = parts[2];
-    return `${day} de ${month} de ${year}`;
+    return t('common.datePattern', '{{day}} de {{month}} de {{year}}', { day, month, year });
   };
 
   const activeBadgeColor = periodoInfo.habilitado ? 'bg-[#407754] text-white' : 'bg-red-600 text-white';
-  const activeBadgeLabel = periodoInfo.habilitado ? 'Activo' : 'Cerrado';
+  const activeBadgeLabel = periodoInfo.habilitado ? t('common.active', 'Activo') : t('common.closed', 'Cerrado');
   const ActiveIcon = periodoInfo.habilitado ? FiUnlock : FiLock;
 
   return (
@@ -65,11 +66,11 @@ export default function PeriodoCard({ isEditable = false }) {
         <div className="relative z-10 flex-1 w-full">
           {isEditing ? (
             <div className="space-y-3 w-full max-w-xl">
-              <h4 className="font-bold text-gray-900 dark:text-gray-100 text-sm">Editar Período de Carga</h4>
+              <h4 className="font-bold text-gray-900 dark:text-gray-100 text-sm">{t('periodoCard.editPeriodTitle', 'Editar Período de Carga')}</h4>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Mes Activo</label>
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('periodoCard.activeMonthLabel', 'Mes Activo')}</label>
                   <select
                     value={mesActivo}
                     onChange={(e) => setMesActivo(e.target.value)}
@@ -83,7 +84,7 @@ export default function PeriodoCard({ isEditable = false }) {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Fecha Límite</label>
+                  <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('periodoCard.deadlineLabel', 'Fecha Límite')}</label>
                   <input
                     type="date"
                     value={fechaLimite}
@@ -100,7 +101,7 @@ export default function PeriodoCard({ isEditable = false }) {
                       onChange={(e) => setHabilitado(e.target.checked)}
                       className="w-4 h-4 text-[#407754] bg-white border-gray-300 rounded focus:ring-[#407754] focus:ring-2"
                     />
-                    Habilitado
+                    {t('periodoCard.enabledLabel', 'Habilitado')}
                   </label>
                 </div>
               </div>
@@ -109,15 +110,15 @@ export default function PeriodoCard({ isEditable = false }) {
             <>
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                  {isEditable ? 'Período de Carga Académica' : 'Sistema Habilitado para Carga de Informes'}
+                  {isEditable ? t('periodoCard.academicLoadPeriod', 'Período de Carga Académica') : t('periodoCard.systemEnabledLabel', 'Sistema Habilitado para Carga de Informes')}
                 </h2>
                 <span className={`${activeBadgeColor} text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide`}>
                   {activeBadgeLabel}
                 </span>
               </div>
               <p className="text-gray-600 dark:text-gray-300 text-sm">
-                Período de carga: <strong className="text-gray-900 dark:text-gray-100">{periodoInfo.mesActivo}</strong> <span className="mx-2 text-gray-300 dark:text-gray-600">|</span> 
-                Fecha límite: <strong className="text-red-600 dark:text-red-400">{formatFriendlyDate(periodoInfo.fechaLimite)}</strong>
+                {t('periodoCard.loadPeriodPrefix', 'Período de carga:')} <strong className="text-gray-900 dark:text-gray-100">{periodoInfo.mesActivo}</strong> <span className="mx-2 text-gray-300 dark:text-gray-600">|</span> 
+                {t('periodoCard.deadlinePrefix', 'Fecha límite:')} <strong className="text-red-600 dark:text-red-400">{formatFriendlyDate(periodoInfo.fechaLimite)}</strong>
               </p>
               
               <div className="mt-4 flex flex-wrap gap-2">
@@ -141,13 +142,13 @@ export default function PeriodoCard({ isEditable = false }) {
                 onClick={handleCancel}
                 className="flex-1 sm:flex-initial px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <FiX className="w-4 h-4" /> Cancelar
+                <FiX className="w-4 h-4" /> {t('common.cancel', 'Cancelar')}
               </button>
               <button
                 onClick={handleSave}
                 className="flex-1 sm:flex-initial px-4 py-2.5 bg-[#407754] hover:bg-[#335f43] text-white text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 hover:shadow-md cursor-pointer"
               >
-                <FiCheck className="w-4 h-4" /> Guardar
+                <FiCheck className="w-4 h-4" /> {t('common.save', 'Guardar')}
               </button>
             </div>
           ) : (
@@ -155,14 +156,14 @@ export default function PeriodoCard({ isEditable = false }) {
               onClick={() => setIsEditing(true)}
               className="w-full md:w-auto px-4 py-2.5 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 hover:shadow-sm cursor-pointer"
             >
-              <FiEdit2 className="w-4 h-4 text-[#407754] dark:text-emerald-400" /> Editar Período
+              <FiEdit2 className="w-4 h-4 text-[#407754] dark:text-emerald-400" /> {t('periodoCard.editPeriodButton', 'Editar Período')}
             </button>
           )
         )}
         
         {!isEditable && (
           <div className="hidden lg:flex flex-col gap-2">
-            <span className="text-[10px] font-bold text-[#407754]/80 dark:text-emerald-400/80 text-right">Formatos vigentes</span>
+            <span className="text-[10px] font-bold text-[#407754]/80 dark:text-emerald-400/80 text-right">{t('periodoCard.validFormats', 'Formatos vigentes')}</span>
           </div>
         )}
       </div>

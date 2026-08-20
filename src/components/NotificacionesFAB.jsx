@@ -144,11 +144,11 @@ export default function NotificacionesFAB() {
   // ────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="fixed bottom-22 right-6 z-40" ref={popoverRef}>
+    <div className="relative" ref={popoverRef}>
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 border border-gray-150 dark:border-gray-700 shadow-lg flex items-center justify-center text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer relative"
+        className="w-12 h-12 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg flex items-center justify-center text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer relative"
         title="Notificaciones"
       >
         <FiBell className="w-5 h-5" />

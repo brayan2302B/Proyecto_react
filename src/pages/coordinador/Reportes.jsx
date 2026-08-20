@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { reportesService } from '../../services/reportesService';
 import { instructoresService } from '../../services/instructoresService';
 import { 
@@ -30,6 +31,7 @@ import { toast } from 'sonner';
 import PageContainer from '../../components/PageContainer';
 
 export default function Reportes() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [instructores, setInstructores] = useState([]);
@@ -57,7 +59,7 @@ export default function Reportes() {
       setInstructores(instList);
     } catch (err) {
       console.error(err);
-      toast.error('Error al cargar datos estadísticos');
+      toast.error(t('reportes.alerts.errorLoad', 'Error al cargar datos estadísticos'));
     } finally {
       setLoading(false);
     }
@@ -80,7 +82,7 @@ export default function Reportes() {
 
   const handleApplyFilters = () => {
     loadData();
-    toast.success('Filtros aplicados con éxito');
+    toast.success(t('reportes.alerts.filtersApplied', 'Filtros aplicados con éxito'));
   };
 
   // ── Exportación a Excel / CSV ────────────────────────────────────────────────
@@ -130,7 +132,7 @@ export default function Reportes() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success('📊 Reporte exportado a Excel / CSV correctamente');
+    toast.success(t('reportes.alerts.csvExported', '📊 Reporte exportado a Excel / CSV correctamente'));
   };
 
   // ── Exportación a PDF Oficial ────────────────────────────────────────────────
@@ -140,7 +142,7 @@ export default function Reportes() {
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      toast.error('Por favor permite las ventanas emergentes para descargar el PDF');
+      toast.error(t('reportes.alerts.allowPopups', 'Por favor permite las ventanas emergentes para descargar el PDF'));
       return;
     }
 
@@ -231,14 +233,14 @@ export default function Reportes() {
       </html>
     `);
     printWindow.document.close();
-    toast.success('📄 Vista previa de PDF generada. Elija Guardar como PDF');
+    toast.success(t('reportes.alerts.pdfGenerated', '📄 Vista previa de PDF generada. Elija Guardar como PDF'));
   };
 
   if (loading || !stats) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
         <div className="w-12 h-12 border-4 border-sena-green border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-500 text-sm">Procesando estadísticas...</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">{t('reportes.loadingStats', 'Procesando estadísticas...')}</p>
       </div>
     );
   }
@@ -262,8 +264,8 @@ export default function Reportes() {
       {/* Header & Export Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Reportes y Estadísticas</h2>
-          <p className="text-sm text-gray-500">Métricas de cumplimiento y trazabilidad mensual de instructores</p>
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('reportes.title', 'Reportes y Estadísticas')}</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('reportes.subtitle', 'Métricas de cumplimiento y trazabilidad mensual de instructores')}</p>
         </div>
 
         {/* Dropdown de Exportación */}
@@ -272,22 +274,22 @@ export default function Reportes() {
             onClick={() => setShowExportMenu(!showExportMenu)}
             className="w-full sm:w-auto px-4 py-2.5 bg-[#407754] hover:bg-[#335f43] text-white text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer"
           >
-            <FiDownload className="w-4 h-4" /> Exportar Reporte <FiChevronDown className="w-3.5 h-3.5" />
+            <FiDownload className="w-4 h-4" /> {t('reportes.exportReport', 'Exportar Reporte')} <FiChevronDown className="w-3.5 h-3.5" />
           </button>
 
           {showExportMenu && (
-            <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
               <button
                 onClick={exportToCSV}
-                className="w-full text-left px-3 py-2.5 hover:bg-green-50 rounded-xl text-xs font-semibold text-gray-700 flex items-center gap-2 transition-colors cursor-pointer"
+                className="w-full text-left px-3 py-2.5 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <FiFileText className="w-4 h-4 text-[#407754]" /> Exportar a Excel / CSV (.csv)
+                <FiFileText className="w-4 h-4 text-[#407754]" /> {t('reportes.exportCSV', 'Exportar a Excel / CSV (.csv)')}
               </button>
               <button
                 onClick={exportToPDF}
-                className="w-full text-left px-3 py-2.5 hover:bg-red-50 rounded-xl text-xs font-semibold text-gray-700 flex items-center gap-2 transition-colors cursor-pointer"
+                className="w-full text-left px-3 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <FiFile className="w-4 h-4 text-red-500" /> Exportar a PDF Imprimible
+                <FiFile className="w-4 h-4 text-red-500" /> {t('reportes.exportPDF', 'Exportar a PDF Imprimible')}
               </button>
             </div>
           )}
@@ -295,21 +297,21 @@ export default function Reportes() {
       </div>
 
       {/* Query Filters */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 text-gray-700">
+      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200">
           <FiFilter className="w-4 h-4 text-sena-green" />
-          <h3 className="text-sm font-bold">Filtros de Consulta</h3>
+          <h3 className="text-sm font-bold">{t('reportes.queryFilters', 'Filtros de Consulta')}</h3>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Instructor</label>
+            <label className="text-[10px] font-bold text-gray-400 uppercase">{t('sidebar.instructor', 'Instructor')}</label>
             <select
               value={selectedInst}
               onChange={(e) => setSelectedInst(e.target.value)}
-              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
+              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
             >
-              <option value="todos">Todos los Instructores</option>
+              <option value="todos">{t('reportes.allInstructors', 'Todos los Instructores')}</option>
               {instructores.map((inst) => (
                 <option key={inst.id} value={inst.id}>{inst.nombre}</option>
               ))}
@@ -317,13 +319,13 @@ export default function Reportes() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Mes de Trazabilidad</label>
+            <label className="text-[10px] font-bold text-gray-400 uppercase">{t('reportes.traceabilityMonth', 'Mes de Trazabilidad')}</label>
             <select
               value={selectedMes}
               onChange={(e) => setSelectedMes(e.target.value)}
-              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
+              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
             >
-              <option value="todos">Todos los Meses</option>
+              <option value="todos">{t('reportes.allMonths', 'Todos los Meses')}</option>
               <option value="Julio 2026">Julio 2026</option>
               <option value="Junio 2026">Junio 2026</option>
               <option value="Mayo 2026">Mayo 2026</option>
@@ -331,13 +333,13 @@ export default function Reportes() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Área de Formación</label>
+            <label className="text-[10px] font-bold text-gray-400 uppercase">{t('perfil.trainingArea', 'Área de Formación')}</label>
             <select
               value={selectedArea}
               onChange={(e) => setSelectedArea(e.target.value)}
-              className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
+              className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-sena-green transition-all"
             >
-              <option value="todos">Todas las Áreas</option>
+              <option value="todos">{t('reportes.allAreas', 'Todas las Áreas')}</option>
               {areas.map((area, idx) => (
                 <option key={idx} value={area}>{area}</option>
               ))}
@@ -348,60 +350,60 @@ export default function Reportes() {
             onClick={handleApplyFilters}
             className="w-full px-4 py-2.5 bg-sena-green hover:bg-sena-green-hover text-white text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 hover:shadow-sm cursor-pointer"
           >
-            Aplicar Filtros
+            {t('reportes.applyFilters', 'Aplicar Filtros')}
           </button>
         </div>
       </div>
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 flex-shrink-0">
+        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center text-blue-500 dark:text-blue-400 flex-shrink-0">
             <FiFileText className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-medium text-gray-400 block uppercase">Total Informes</span>
-            <span className="text-xl font-bold text-gray-800">{stats.totalInformes}</span>
+            <span className="text-[10px] font-medium text-gray-400 block uppercase">{t('reportes.totalReports', 'Total Informes')}</span>
+            <span className="text-xl font-bold text-gray-800 dark:text-gray-100">{stats.totalInformes}</span>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-sena-green flex-shrink-0">
+        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-950/40 flex items-center justify-center text-sena-green dark:text-emerald-400 flex-shrink-0">
             <FiCheckCircle className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-medium text-gray-400 block uppercase">Aprobados</span>
+            <span className="text-[10px] font-medium text-gray-400 block uppercase">{t('common.approved', 'Aprobados')}</span>
             <span className="text-xl font-bold text-sena-green">{stats.aprobados}</span>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 flex-shrink-0">
+        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/40 flex items-center justify-center text-red-500 dark:text-red-400 flex-shrink-0">
             <FiXCircle className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-medium text-gray-400 block uppercase">Rechazados</span>
+            <span className="text-[10px] font-medium text-gray-400 block uppercase">{t('revisionInformes.rejected', 'Rechazados')}</span>
             <span className="text-xl font-bold text-red-500">{stats.rechazados}</span>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 flex-shrink-0">
+        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center text-amber-500 dark:text-amber-400 flex-shrink-0">
             <FiClock className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-medium text-gray-400 block uppercase">Pendientes</span>
+            <span className="text-[10px] font-medium text-gray-400 block uppercase">{t('common.pending', 'Pendientes')}</span>
             <span className="text-xl font-bold text-amber-500">{stats.pendientes}</span>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center gap-3 col-span-2 lg:col-span-1">
-          <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 flex-shrink-0">
+        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-4 shadow-sm flex items-center gap-3 col-span-2 lg:col-span-1">
+          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/40 flex items-center justify-center text-purple-500 dark:text-purple-400 flex-shrink-0">
             <FiActivity className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] font-medium text-gray-400 block uppercase">% Cumplimiento</span>
-            <span className="text-xl font-bold text-purple-650 font-bold">{stats.tasaCumplimiento}%</span>
+            <span className="text-[10px] font-medium text-gray-400 block uppercase">{t('reportes.complianceRate', '% Cumplimiento')}</span>
+            <span className="text-xl font-bold text-purple-600">{stats.tasaCumplimiento}%</span>
           </div>
         </div>
       </div>
@@ -410,9 +412,9 @@ export default function Reportes() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Cumplimiento por Instructor */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm space-y-4">
-          <h3 className="font-bold text-gray-800 text-sm border-b border-gray-100 pb-3 flex items-center gap-2">
-            <FiBarChart2 className="w-4 h-4 text-sena-green" /> Cumplimiento por Instructor (GC / GF)
+        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 shadow-sm space-y-4">
+          <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm border-b border-gray-100 dark:border-gray-700 pb-3 flex items-center gap-2">
+            <FiBarChart2 className="w-4 h-4 text-sena-green" /> {t('reportes.complianceByInstructor', 'Cumplimiento por Instructor (GC / GF)')}
           </h3>
           <div className="h-80 w-full text-xs">
             <ResponsiveContainer width="100%" height="100%">
@@ -438,10 +440,10 @@ export default function Reportes() {
         </div>
 
         {/* Distribución de Estados & Tasa General */}
-        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between gap-6">
+        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 shadow-sm flex flex-col justify-between gap-6">
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-800 text-sm border-b border-gray-100 pb-3">
-              Distribución de Estados
+            <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm border-b border-gray-100 dark:border-gray-700 pb-3">
+              {t('reportes.stateDistribution', 'Distribución de Estados')}
             </h3>
             
             <div className="flex flex-col sm:flex-row items-center justify-around gap-4">
@@ -474,12 +476,12 @@ export default function Reportes() {
                 {pieData.map((item, idx) => {
                   const pct = Math.round((item.value / stats.totalInformes) * 100) || 0;
                   return (
-                    <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-gray-50 border border-gray-100">
+                    <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600">
                       <div className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-                        <span className="text-xs font-semibold text-gray-600">{item.name}</span>
+                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{item.name}</span>
                       </div>
-                      <span className="text-xs font-extrabold text-gray-800">{pct}% ({item.value})</span>
+                      <span className="text-xs font-extrabold text-gray-800 dark:text-gray-100">{pct}% ({item.value})</span>
                     </div>
                   );
                 })}
@@ -488,10 +490,10 @@ export default function Reportes() {
           </div>
 
           {/* Compliance rate summary */}
-          <div className="bg-sena-green-light rounded-xl p-5 border border-green-100 flex items-center justify-between">
+          <div className="bg-sena-green-light dark:bg-green-950/30 rounded-xl p-5 border border-green-100 dark:border-green-800 flex items-center justify-between">
             <div>
-              <h4 className="text-sena-green font-bold text-sm">Tasa de cumplimiento general</h4>
-              <p className="text-xs text-gray-500 mt-0.5">Porcentaje total de firmas avaladas del mes en curso.</p>
+              <h4 className="text-sena-green font-bold text-sm">{t('reportes.generalComplianceRate', 'Tasa de cumplimiento general')}</h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('reportes.complianceDesc', 'Porcentaje total de firmas avaladas del mes en curso.')}</p>
             </div>
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-4 border-sena-green text-center">
               <span className="text-base font-extrabold text-sena-green">{stats.tasaCumplimiento}%</span>

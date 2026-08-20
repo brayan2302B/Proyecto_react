@@ -34,7 +34,7 @@ export default function Dashboard() {
         setInstructores(instList);
         setInformes(infList);
       } catch (err) {
-        toast.error('Error al cargar datos del panel');
+        toast.error(t('coordinatorDashboard.alerts.loadError', 'Error al cargar datos del panel'));
       } finally {
         setLoading(false);
       }
@@ -46,9 +46,9 @@ export default function Dashboard() {
     setSendingReminder(id);
     try {
       await instructoresService.enviarRecordatorio(id);
-      toast.success(`Recordatorio enviado con éxito a ${nombre}`);
+      toast.success(t('coordinatorDashboard.alerts.reminderSent', 'Recordatorio enviado con éxito a {{nombre}}', { nombre }));
     } catch (err) {
-      toast.error('No se pudo enviar el recordatorio');
+      toast.error(t('coordinatorDashboard.alerts.reminderError', 'No se pudo enviar el recordatorio'));
     } finally {
       setSendingReminder(null);
     }
@@ -58,7 +58,7 @@ export default function Dashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
         <div className="w-12 h-12 border-4 border-[#407754] border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">Cargando Panel de Coordinación...</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">{t('coordinatorDashboard.loading', 'Cargando Panel de Coordinación...')}</p>
       </div>
     );
   }
@@ -80,8 +80,8 @@ export default function Dashboard() {
       
       {/* Title */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Panel de Coordinación Académica</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Centro de Servicios y Gestión Empresarial | Período de control activo</p>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{t('coordinatorDashboard.title', 'Panel de Coordinación Académica')}</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('coordinatorDashboard.subtitle', 'Centro de Servicios y Gestión Empresarial | Período de control activo')}</p>
       </div>
 
       {/* Active Period / Periodo de Carga */}
@@ -93,9 +93,9 @@ export default function Dashboard() {
         {/* Metric 1 */}
         <StatCard
           icon={FiUsers}
-          title="Total Instructores"
+          title={t('coordinatorDashboard.totalInstructors', 'Total Instructores')}
           value={totalInstructores}
-          subtext={`${totalAprendices} aprendices activos`}
+          subtext={t('coordinatorDashboard.activeApprentices', '{{count}} aprendices activos', { count: totalAprendices })}
           iconBgClass="bg-blue-50 dark:bg-blue-950/40"
           iconColorClass="text-blue-500 dark:text-blue-400"
         />
@@ -103,9 +103,9 @@ export default function Dashboard() {
         {/* Metric 2 */}
         <StatCard
           icon={FiFileText}
-          title="Pendientes Revisión"
+          title={t('coordinatorDashboard.pendingReview', 'Pendientes Revisión')}
           value={pendientesRevision}
-          subtext="Informes recibidos"
+          subtext={t('coordinatorDashboard.reportsReceived', 'Informes recibidos')}
           subtextClass="text-amber-500 dark:text-amber-400 font-semibold"
           iconBgClass="bg-amber-50 dark:bg-amber-950/40"
           iconColorClass="text-amber-500 dark:text-amber-400"
@@ -114,9 +114,9 @@ export default function Dashboard() {
         {/* Metric 3 */}
         <StatCard
           icon={FiCheckCircle}
-          title="Informes Validados"
+          title={t('coordinatorDashboard.validatedReports', 'Informes Validados')}
           value={informesValidados}
-          subtext="Firma avalada"
+          subtext={t('coordinatorDashboard.endorsedSignature', 'Firma avalada')}
           subtextClass="text-green-600 dark:text-emerald-400 font-semibold"
           iconBgClass="bg-green-50 dark:bg-green-950/40"
           iconColorClass="text-[#407754] dark:text-emerald-400"
@@ -125,9 +125,9 @@ export default function Dashboard() {
         {/* Metric 4 */}
         <StatCard
           icon={FiActivity}
-          title="% Cumplimiento"
+          title={t('coordinatorDashboard.compliancePercent', '% Cumplimiento')}
           value={`${cumplimientoPorcentaje}%`}
-          subtext="De informes aprobados"
+          subtext={t('coordinatorDashboard.approvedReportsOf', 'De informes aprobados')}
           iconBgClass="bg-purple-50 dark:bg-purple-950/40"
           iconColorClass="text-purple-500 dark:text-purple-400"
         />
@@ -139,10 +139,10 @@ export default function Dashboard() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5 text-red-700 dark:text-red-300">
             <FiAlertTriangle className="w-5 h-5" />
-            <h4 className="font-bold text-base">Alerta de Cumplimiento: Instructores sin Informe</h4>
+            <h4 className="font-bold text-base">{t('coordinatorDashboard.complianceAlert', 'Alerta de Cumplimiento: Instructores sin Informe')}</h4>
           </div>
           <span className="bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-200 text-xs font-extrabold px-3 py-1 rounded-full">
-            {instructoresSinInforme.length} Pendiente(s) Crítico(s)
+            {t('coordinatorDashboard.criticalPending', '{{count}} Pendiente(s) Crítico(s)', { count: instructoresSinInforme.length })}
           </span>
         </div>
 
@@ -159,14 +159,14 @@ export default function Dashboard() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">{inst.area}</p>
                   </div>
                   <span className="bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                    {inst.informesPendientes} Pendiente(s)
+                    {t('coordinatorDashboard.pendingCount', '{{count}} Pendiente(s)', { count: inst.informesPendientes })}
                   </span>
                 </div>
                 
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
                     <FiActivity className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-                    <span>{inst.fichas.length} Ficha(s) | {inst.totalAprendices} Aprendices</span>
+                    <span>{t('coordinatorDashboard.fichasApprentices', '{{fichas}} Ficha(s) | {{aprendices}} Aprendices', { fichas: inst.fichas.length, aprendices: inst.totalAprendices })}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
                     <FiFolder className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
@@ -182,13 +182,13 @@ export default function Dashboard() {
                   className="flex-1 px-3 py-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-300 text-xs font-bold rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   <FiSend className="w-3.5 h-3.5" />
-                  {sendingReminder === inst.id ? 'Enviando...' : 'Enviar recordatorio'}
+                  {sendingReminder === inst.id ? t('coordinatorDashboard.sending', 'Enviando...') : t('coordinatorDashboard.sendReminder', 'Enviar recordatorio')}
                 </button>
                 <button 
-                  onClick={() => toast.info(`Mostrando detalles de: ${inst.nombre}`)}
+                  onClick={() => toast.info(t('coordinatorDashboard.alerts.showingDetails', 'Mostrando detalles de: {{nombre}}', { nombre: inst.nombre }))}
                   className="px-3 py-2 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-200 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-1 cursor-pointer"
                 >
-                  Ver detalles <FiArrowRight className="w-3.5 h-3.5" />
+                  {t('coordinatorDashboard.viewDetails', 'Ver detalles')} <FiArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

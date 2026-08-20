@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiZap, FiSend, FiHelpCircle, FiClock, FiX, FiCpu } from 'react-icons/fi';
+import { FiSend, FiHelpCircle, FiClock, FiX, FiCpu } from 'react-icons/fi';
+import { RiRobot2Line } from 'react-icons/ri';
 import { toast } from 'sonner';
 import api from '../services/api';
 
@@ -116,7 +117,7 @@ export default function AsistenteFAB() {
         className="w-12 h-12 rounded-full bg-sena-green text-white shadow-lg flex items-center justify-center hover:bg-sena-green-hover hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
         title="Asistente de Coordinación"
       >
-        <FiZap className="w-5 h-5" />
+        <RiRobot2Line className="w-5 h-5" />
       </button>
 
       {/* Popover Chat */}

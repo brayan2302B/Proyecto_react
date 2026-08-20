@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  FiSend, FiMessageSquare, FiX, FiMoreHorizontal, FiZap,
+  FiSend, FiMessageSquare, FiX, FiMoreHorizontal,
   FiPaperclip, FiFileText, FiCheckCircle, FiXCircle, FiInfo, FiAlertCircle
 } from 'react-icons/fi';
+import { RiRobot2Line } from 'react-icons/ri';
 import logoSena from '../assets/logo-sena.png';
 import { enviarMensajeAsistente, enviarArchivoInforme } from '../services/asistenteService';
 
@@ -292,7 +293,7 @@ export default function AsistenteWidget() {
   };
 
   return (
-    <>
+    <div className="relative">
       {modalAbierto && archivoSeleccionado && (
         <ModalConfirmacion
           archivo={archivoSeleccionado}
@@ -310,7 +311,7 @@ export default function AsistenteWidget() {
         }`}
         title="Asistente STIMI"
       >
-        {isOpen ? <FiX className="w-6 h-6 text-white" /> : <FiZap className="w-6 h-6 text-white" />}
+        {isOpen ? <FiX className="w-6 h-6 text-white" /> : <RiRobot2Line className="w-6 h-6 text-white" />}
         {!isOpen && (
           <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-pulse"></span>
         )}
@@ -320,7 +321,7 @@ export default function AsistenteWidget() {
       {isOpen && (
         <div
           ref={panelRef}
-          className="fixed bottom-[136px] right-6 z-50 w-[380px] max-h-[540px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200"
+          className="absolute bottom-16 right-0 z-50 w-[380px] max-h-[540px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 zoom-in-95 duration-200"
         >
           {/* Header */}
           <div className="bg-[#407754] px-4 py-3.5 flex items-center gap-3 shrink-0">
@@ -450,6 +451,6 @@ export default function AsistenteWidget() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

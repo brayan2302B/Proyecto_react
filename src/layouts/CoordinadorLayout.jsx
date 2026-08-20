@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import NotificacionesFAB from '../components/NotificacionesFAB';
 import AsistenteFAB from '../components/AsistenteFAB';
 import logoSena from '../assets/logo-sena.png';
+import WhatsAppFAB from '../components/WhatsAppFAB';
 
 export default function CoordinadorLayout() {
   const { user, logout } = useAuth();
@@ -243,9 +244,9 @@ export default function CoordinadorLayout() {
         <Outlet />
       </main>
 
-      {/* Floating Action Buttons (FABs) in bottom right corner */}
       <div className="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3">
         <NotificacionesFAB />
+        <WhatsAppFAB sizeClass="w-12 h-12 shadow-lg" iconSizeClass="w-5 h-5" />
         <AsistenteFAB />
       </div>
 

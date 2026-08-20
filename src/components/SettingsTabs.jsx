@@ -36,20 +36,20 @@ export default function SettingsTabs({
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      toast.error('Las contraseñas nuevas no coinciden');
+      toast.error(t('configuracion.alerts.passwordsMismatch', 'Las contraseñas nuevas no coinciden'));
       return;
     }
     
     setUpdatingPassword(true);
     try {
       await changePassword(currentPassword, newPassword);
-      toast.success('Contraseña actualizada con éxito');
+      toast.success(t('configuracion.alerts.passwordUpdated', 'Contraseña actualizada con éxito'));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setShowPasswordForm(false);
     } catch (err) {
-      toast.error(err.message || 'Error al actualizar la contraseña');
+      toast.error(err.message || t('configuracion.alerts.passwordUpdateError', 'Error al actualizar la contraseña'));
     } finally {
       setUpdatingPassword(false);
     }
@@ -64,8 +64,8 @@ export default function SettingsTabs({
               <FiLock className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Seguridad de la Cuenta</h3>
-              <p className="text-xs text-gray-400 dark:text-gray-500">Actualiza tu contraseña periódicamente</p>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">{t('configuracion.accountSecurity', 'Seguridad de la Cuenta')}</h3>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{t('configuracion.accountSecurityDesc', 'Actualiza tu contraseña periódicamente')}</p>
             </div>
           </div>
           <button
@@ -74,9 +74,9 @@ export default function SettingsTabs({
             className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-xl border border-gray-200 dark:border-gray-600 transition-all cursor-pointer"
           >
             {showPasswordForm ? (
-              <>Ocultar <FiChevronUp className="w-4.5 h-4.5 text-[#407754] dark:text-emerald-400" /></>
+              <>{t('configuracion.hide', 'Ocultar')} <FiChevronUp className="w-4.5 h-4.5 text-[#407754] dark:text-emerald-400" /></>
             ) : (
-              <>Cambiar contraseña <FiChevronDown className="w-4.5 h-4.5 text-[#407754] dark:text-emerald-400" /></>
+              <>{t('configuracion.changePassword', 'Cambiar contraseña')} <FiChevronDown className="w-4.5 h-4.5 text-[#407754] dark:text-emerald-400" /></>
             )}
           </button>
         </div>
@@ -84,11 +84,11 @@ export default function SettingsTabs({
         {showPasswordForm && (
           <form onSubmit={handleUpdatePassword} className="space-y-4 max-w-md transition-all duration-300 animate-in slide-in-from-top-3">
             <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-xl p-3 text-xs text-blue-800 dark:text-blue-200 font-medium">
-              🔑 La contraseña debe tener al menos 8 caracteres e incluir letras y números.
+              🔑 {t('configuracion.passwordHint', 'La contraseña debe tener al menos 8 caracteres e incluir letras y números.')}
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Contraseña actual</label>
+              <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('configuracion.currentPassword', 'Contraseña actual')}</label>
               <input
                 required
                 type="password"
@@ -100,7 +100,7 @@ export default function SettingsTabs({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Nueva contraseña</label>
+              <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('configuracion.newPassword', 'Nueva contraseña')}</label>
               <input
                 required
                 type="password"
@@ -112,7 +112,7 @@ export default function SettingsTabs({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">Confirmar contraseña</label>
+              <label className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase">{t('configuracion.confirmPassword', 'Confirmar contraseña')}</label>
               <input
                 required
                 type="password"
@@ -129,7 +129,7 @@ export default function SettingsTabs({
               className="w-full mt-2 py-2.5 bg-[#407754] hover:bg-[#335f43] text-white text-xs font-bold rounded-xl transition-all hover:shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <FiLock className="w-4 h-4" /> 
-              {updatingPassword ? 'Actualizando...' : 'Actualizar contraseña'}
+              {updatingPassword ? t('configuracion.updating', 'Actualizando...') : t('configuracion.updatePassword', 'Actualizar contraseña')}
             </button>
           </form>
         )}
